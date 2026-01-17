@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1768641804150,
+      "tag": "0000_noisy_luckman",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1768641900000,
+      "tag": "0001_better_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1768642000000,
+      "tag": "0002_fix_better_auth_timestamps",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1768642100000,
+      "tag": "0003_add_two_factor_enabled",
+      "breakpoints": true
+    }
+  ]
+}

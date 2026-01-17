@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+
+# Production
+build/
+dist/
+
+# OpenNext / Cloudflare
+.open-next/
+.wrangler/
+.dev.vars
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Drizzle
+drizzle/meta/
+
+# Turbo
+.turbo/
+
+# SQLite (local D1)
+*.sqlite
+*.sqlite3
+.wrangler/state/
+
+# Temporary/generated files
+COMPACTION.md
+compaction-summary.json
+logs/

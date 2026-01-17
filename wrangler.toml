@@ -1,0 +1,39 @@
+name = "servdesk-mvp"
+account_id = "23aa06b3e1cd312579694c6afec2892d"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Main entry point for OpenNext
+main = ".open-next/worker.js"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "servdesk-db"
+database_id = "c5264957-5585-4fde-ab47-1bc510f0de78"
+migrations_dir = "drizzle/migrations"
+
+# KV Namespace for sessions/cache
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "0d6087f9fdc34ba6ba7dccc15d67082e"
+
+# KV Namespace for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "f562c7ad884f471b996f33872048da40"
+
+# Assets configuration for static files
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Environment variables (secrets should be set via wrangler secret)
+[vars]
+ENVIRONMENT = "development"
+
+# Production environment overrides
+[env.production]
+name = "servdesk-mvp"
+[env.production.vars]
+ENVIRONMENT = "production"
