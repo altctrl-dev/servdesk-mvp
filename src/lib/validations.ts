@@ -38,7 +38,7 @@ export type TicketFilter = z.infer<typeof ticketFilterSchema>;
 // TICKET CREATION
 // =============================================================================
 
-/** Schema for creating a new ticket (manual creation by admin) */
+/** Schema for creating a new ticket (manual creation by admin) - legacy with customerId */
 export const createTicketSchema = z.object({
   /** Customer ID - must reference existing customer */
   customerId: z.string().min(1, "Customer ID is required"),
@@ -51,6 +51,22 @@ export const createTicketSchema = z.object({
 });
 
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
+
+/** Schema for creating a new ticket with customer email/name (for manual creation via UI) */
+export const createTicketWithCustomerSchema = z.object({
+  /** Customer email address */
+  customerEmail: z.string().email("Please enter a valid email address"),
+  /** Customer name */
+  customerName: z.string().min(1, "Customer name is required").max(100, "Name too long"),
+  /** Ticket subject/title */
+  subject: z.string().min(1, "Subject is required").max(255, "Subject too long"),
+  /** Initial message content */
+  content: z.string().min(1, "Content is required"),
+  /** Priority level (optional, defaults to NORMAL) */
+  priority: z.enum(TICKET_PRIORITIES).optional().default("NORMAL"),
+});
+
+export type CreateTicketWithCustomerInput = z.infer<typeof createTicketWithCustomerSchema>;
 
 // =============================================================================
 // TICKET REPLY

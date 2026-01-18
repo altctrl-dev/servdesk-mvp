@@ -12,6 +12,7 @@ import { getSessionWithRole, canViewAllTickets, requireRole } from "@/lib/rbac";
 import {
   ticketFilterSchema,
   createTicketSchema,
+  createTicketWithCustomerSchema,
   safeValidate,
 } from "@/lib/validations";
 import { generateTicketNumber, generateTrackingToken } from "@/lib/tickets";
@@ -172,34 +173,84 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Parse and validate request body
+    // Parse request body
     const body = await request.json();
-    const validation = safeValidate(createTicketSchema, body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: `Validation failed: ${validation.error}` },
-        { status: 400 }
-      );
-    }
-
-    const { customerId, subject, content, priority } = validation.data;
 
     // Get database
     const { env } = await getCloudflareContext();
     const db = getDb((env as CloudflareEnv).DB);
 
-    // Verify customer exists
-    const [customer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.id, customerId))
-      .limit(1);
+    let customer;
+    let subject: string;
+    let content: string;
+    let priority: "NORMAL" | "HIGH" | "URGENT";
 
-    if (!customer) {
-      return NextResponse.json(
-        { error: "Customer not found" },
-        { status: 404 }
-      );
+    // Try new schema first (with customerEmail/customerName), then fall back to legacy schema (with customerId)
+    const newSchemaValidation = safeValidate(createTicketWithCustomerSchema, body);
+
+    if (newSchemaValidation.success) {
+      // New schema: find or create customer by email
+      const { customerEmail, customerName, subject: s, content: c, priority: p } = newSchemaValidation.data;
+      subject = s;
+      content = c;
+      priority = p;
+
+      // Try to find existing customer by email
+      const [existingCustomer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.email, customerEmail.toLowerCase()))
+        .limit(1);
+
+      if (existingCustomer) {
+        // Update customer name if it changed
+        if (existingCustomer.name !== customerName) {
+          await db
+            .update(customers)
+            .set({ name: customerName, updatedAt: new Date() })
+            .where(eq(customers.id, existingCustomer.id));
+        }
+        customer = { ...existingCustomer, name: customerName };
+      } else {
+        // Create new customer
+        const [newCustomer] = await db
+          .insert(customers)
+          .values({
+            email: customerEmail.toLowerCase(),
+            name: customerName,
+          })
+          .returning();
+        customer = newCustomer;
+      }
+    } else {
+      // Fall back to legacy schema with customerId
+      const legacyValidation = safeValidate(createTicketSchema, body);
+      if (!legacyValidation.success) {
+        return NextResponse.json(
+          { error: `Validation failed: ${legacyValidation.error}` },
+          { status: 400 }
+        );
+      }
+
+      const { customerId, subject: s, content: c, priority: p } = legacyValidation.data;
+      subject = s;
+      content = c;
+      priority = p;
+
+      // Verify customer exists
+      const [existingCustomer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, customerId))
+        .limit(1);
+
+      if (!existingCustomer) {
+        return NextResponse.json(
+          { error: "Customer not found" },
+          { status: 404 }
+        );
+      }
+      customer = existingCustomer;
     }
 
     // Generate ticket number and tracking token
@@ -212,7 +263,7 @@ export async function POST(request: NextRequest) {
       .values({
         ticketNumber,
         trackingToken,
-        customerId,
+        customerId: customer.id,
         subject,
         priority,
         status: "NEW",
@@ -239,7 +290,7 @@ export async function POST(request: NextRequest) {
         ticketCount: sql`${customers.ticketCount} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(customers.id, customerId));
+      .where(eq(customers.id, customer.id));
 
     // Create audit log
     await logTicketCreated(db, newTicket.id, session.user.id, session.user.email, {

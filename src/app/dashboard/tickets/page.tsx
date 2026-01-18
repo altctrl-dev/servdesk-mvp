@@ -16,6 +16,7 @@ import {
   TicketFilters,
   TicketTable,
   TicketTableSkeleton,
+  TicketPageHeader,
 } from "@/components/admin";
 
 export const runtime = 'edge';
@@ -142,14 +143,12 @@ async function TicketsContent({
     limit,
   });
 
+  // Check if user can create tickets (SUPER_ADMIN only)
+  const canCreateTicket = session.role === "SUPER_ADMIN";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tickets</h1>
-        <p className="text-muted-foreground">
-          Manage and respond to support tickets
-        </p>
-      </div>
+      <TicketPageHeader canCreateTicket={canCreateTicket} />
 
       <div className="space-y-4">
         <TicketFilters
@@ -170,11 +169,13 @@ async function TicketsContent({
 function TicketsSkeleton() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tickets</h1>
-        <p className="text-muted-foreground">
-          Manage and respond to support tickets
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Tickets</h1>
+          <p className="text-muted-foreground">
+            Manage and respond to support tickets
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">

@@ -15,3 +15,5 @@ export { MessageThread } from "./message-thread";
 export { ReplyComposer } from "./reply-composer";
 export { TicketInfoPanel } from "./ticket-info-panel";
 export { AuditLog } from "./audit-log";
+export { CreateTicketDialog } from "./create-ticket-dialog";
+export { TicketPageHeader } from "./ticket-page-header";
