@@ -69,8 +69,8 @@ export function LoginForm() {
         return;
       }
 
-      // Success - redirect to the original destination or admin
-      const redirectTo = searchParams.get("redirect") || "/admin";
+      // Success - redirect to the original destination or dashboard
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
