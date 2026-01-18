@@ -1,0 +1,9 @@
+name = "servdesk-email-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+INBOUND_API_URL = "https://servdesk-mvp.pages.dev/api/inbound/cloudflare"
+
+# Secret: INBOUND_API_SECRET should be set via wrangler secret put

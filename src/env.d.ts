@@ -34,6 +34,9 @@ export type CloudflareEnv = {
   /** Base URL for tracking links, e.g., "https://servdesk.example.com" */
   BASE_URL: string;
 
+  // Cloudflare Email Worker secret
+  INBOUND_API_SECRET: string;
+
   // OAuth (optional)
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
@@ -55,6 +58,7 @@ declare global {
       CLOUDFLARE_ACCOUNT_ID?: string;
       CLOUDFLARE_D1_DATABASE_ID?: string;
       CLOUDFLARE_API_TOKEN?: string;
+      INBOUND_API_SECRET?: string;
     }
   }
 }
