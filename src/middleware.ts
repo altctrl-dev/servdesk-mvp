@@ -72,8 +72,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // For protected routes, check for session cookie
-  // Better Auth uses 'servdesk.session_token' cookie (with our prefix)
+  // Better Auth uses '__Secure-servdesk.session_token' in production (HTTPS)
+  // or 'servdesk.session_token' in development (HTTP)
   const sessionCookie =
+    request.cookies.get("__Secure-servdesk.session_token") ||
     request.cookies.get("servdesk.session_token") ||
     request.cookies.get("better-auth.session_token");
 
