@@ -19,6 +19,7 @@ import {
   invitationTemplate,
   passwordResetTemplate,
   verificationCodeTemplate,
+  passwordResetCodeTemplate,
   type TicketEmailData,
   type CustomerEmailData,
   type MessageEmailData,
@@ -709,6 +710,51 @@ export async function sendVerificationCodeEmail(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Error sending verification code email:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Sends a password reset verification code for self-service password reset.
+ * Only sends if RESEND_API_KEY is configured.
+ */
+export async function sendPasswordResetCodeEmail(
+  env: CloudflareEnv,
+  params: {
+    email: string;
+    code: string;
+  }
+): Promise<EmailSendResult> {
+  // Check if Resend is configured
+  if (!env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not configured, skipping password reset code email");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const resend = getResendClient(env);
+
+  const html = passwordResetCodeTemplate({
+    email: params.email,
+    code: params.code,
+  });
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.SUPPORT_EMAIL_FROM,
+      to: params.email,
+      subject: "Reset your ServDesk password",
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send password reset code email:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error sending password reset code email:", message);
     return { success: false, error: message };
   }
 }

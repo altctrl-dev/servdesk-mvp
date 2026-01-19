@@ -578,3 +578,48 @@ export function verificationCodeTemplate(params: {
     "This is a security notification from ServDesk."
   );
 }
+
+// =============================================================================
+// SELF-SERVICE PASSWORD RESET EMAIL TEMPLATE
+// =============================================================================
+
+/** Password reset code data for email templates */
+export interface PasswordResetCodeEmailData {
+  email: string;
+  code: string;
+}
+
+/**
+ * Template for self-service password reset code.
+ * Sent when user requests to reset their password via the forgot password flow.
+ */
+export function passwordResetCodeTemplate(params: {
+  email: string;
+  code: string;
+}): string {
+  const { email, code } = params;
+
+  const content = `
+    <p>Hello,</p>
+
+    <p>We received a request to reset the password for your ServDesk account (<strong>${escapeHtml(email)}</strong>).</p>
+
+    <div style="${baseStyles.ticketBox}">
+      <div style="${baseStyles.ticketNumber}">Password Reset Code</div>
+      <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 16px 0; font-family: monospace;">
+        ${escapeHtml(code)}
+      </div>
+    </div>
+
+    <p>Enter this code on the password reset page to set a new password.</p>
+
+    <p style="${baseStyles.muted}">This code will expire in <strong>10 minutes</strong>.</p>
+
+    <p style="${baseStyles.muted}">If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+  `;
+
+  return wrapInLayout(
+    content,
+    "This is a security notification from ServDesk."
+  );
+}

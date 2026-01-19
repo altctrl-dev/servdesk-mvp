@@ -478,8 +478,12 @@ export type NewInvitation = typeof invitations.$inferInsert;
 // =============================================================================
 
 /**
- * Password reset tokens for SUPER_ADMIN-initiated password resets.
- * Tokens expire after 1 hour and are one-time use.
+ * Password reset tokens for both SUPER_ADMIN-initiated and self-service password resets.
+ * Supports two modes:
+ * 1. Token-based: SUPER_ADMIN triggers reset, user receives link with token (legacy)
+ * 2. Code-based: User self-service, enters email, receives 6-digit verification code
+ *
+ * Tokens expire after 1 hour (admin-initiated) or 10 minutes (self-service code).
  */
 export const passwordResetTokens = sqliteTable(
   "password_reset_tokens",
@@ -489,14 +493,32 @@ export const passwordResetTokens = sqliteTable(
       .primaryKey()
       .$defaultFn(() => generateId()),
 
-    /** User ID for whom the password reset is requested */
-    userId: text("user_id").notNull(),
+    /** User ID for whom the password reset is requested (nullable for self-service before user lookup) */
+    userId: text("user_id"),
 
-    /** Unique token for the password reset link */
-    token: text("token").notNull().unique(),
+    /** Email address for self-service password reset */
+    email: text("email"),
 
-    /** Token expiration timestamp (1 hour from creation) */
-    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    /** Unique token for the password reset link (admin-initiated resets) */
+    token: text("token").unique(),
+
+    /** 6-digit verification code for self-service password reset */
+    verificationCode: text("verification_code"),
+
+    /** Verification code expiration timestamp (10 minutes from generation) */
+    verificationCodeExpiresAt: integer("verification_code_expires_at", { mode: "timestamp" }),
+
+    /** Number of failed verification attempts (max 5 before lockout) */
+    verificationAttempts: integer("verification_attempts").notNull().default(0),
+
+    /** Number of verification codes sent in the past hour (max 3 for rate limiting) */
+    verificationCodesSent: integer("verification_codes_sent").notNull().default(0),
+
+    /** Timestamp when rate limit window started (for hourly rate limiting) */
+    rateLimitWindowStart: integer("rate_limit_window_start", { mode: "timestamp" }),
+
+    /** Token expiration timestamp (1 hour from creation for admin-initiated) */
+    expiresAt: integer("expires_at", { mode: "timestamp" }),
 
     /** Timestamp when token was used (null if not used) */
     usedAt: integer("used_at", { mode: "timestamp" }),
@@ -509,6 +531,7 @@ export const passwordResetTokens = sqliteTable(
   (table) => [
     uniqueIndex("password_reset_tokens_token_idx").on(table.token),
     index("password_reset_tokens_user_id_idx").on(table.userId),
+    index("password_reset_tokens_email_idx").on(table.email),
     index("password_reset_tokens_expires_at_idx").on(table.expiresAt),
   ]
 );

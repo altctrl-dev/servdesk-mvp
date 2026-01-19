@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/login/mfa",
+  "/forgot-password",
   "/track",
   "/invite",
   "/api/auth",

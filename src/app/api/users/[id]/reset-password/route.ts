@@ -91,8 +91,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       user: {
         email: targetUser.email,
         name: targetUser.name,
-        token: resetToken.token,
-        expiresAt: resetToken.expiresAt,
+        token: resetToken.token!,
+        expiresAt: resetToken.expiresAt!,
       },
     });
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         ? "Password reset email sent successfully"
         : "Password reset created but email could not be sent",
       emailSent: emailResult.success,
-      expiresAt: resetToken.expiresAt.toISOString(),
+      expiresAt: resetToken.expiresAt!.toISOString(),
     });
   } catch (error) {
     if (

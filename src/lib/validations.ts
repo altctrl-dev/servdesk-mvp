@@ -220,7 +220,7 @@ export const resetPasswordRequestSchema = z.object({
 
 export type ResetPasswordRequestInput = z.infer<typeof resetPasswordRequestSchema>;
 
-/** Schema for setting new password after reset */
+/** Schema for setting new password after reset (admin-initiated, token-based) */
 export const setNewPasswordSchema = z.object({
   /** Token from the password reset email */
   token: z.string().min(1, "Token is required"),
@@ -232,6 +232,36 @@ export const setNewPasswordSchema = z.object({
 });
 
 export type SetNewPasswordInput = z.infer<typeof setNewPasswordSchema>;
+
+// =============================================================================
+// SELF-SERVICE PASSWORD RESET
+// =============================================================================
+
+/** Schema for self-service forgot password request */
+export const forgotPasswordSchema = z.object({
+  /** User's email address */
+  email: z.string().email("Please enter a valid email address"),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Schema for self-service password reset with verification code */
+export const selfServiceResetPasswordSchema = z.object({
+  /** User's email address */
+  email: z.string().email("Please enter a valid email address"),
+  /** 6-digit verification code sent to email */
+  verificationCode: z
+    .string()
+    .length(6, "Verification code must be 6 digits")
+    .regex(/^\d{6}$/, "Verification code must be 6 digits"),
+  /** New password */
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password too long"),
+});
+
+export type SelfServiceResetPasswordInput = z.infer<typeof selfServiceResetPasswordSchema>;
 
 // =============================================================================
 // VALIDATION HELPERS
