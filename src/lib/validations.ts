@@ -188,7 +188,14 @@ export const inviteUserSchema = z.object({
 
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
 
-/** Schema for accepting an invitation */
+/** Schema for sending verification code */
+export const sendVerificationCodeSchema = z.object({
+  /** No additional fields needed - token comes from URL */
+});
+
+export type SendVerificationCodeInput = z.infer<typeof sendVerificationCodeSchema>;
+
+/** Schema for accepting an invitation with email verification */
 export const acceptInvitationSchema = z.object({
   /** User's display name */
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
@@ -197,6 +204,11 @@ export const acceptInvitationSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(100, "Password too long"),
+  /** 6-digit verification code sent to email */
+  verificationCode: z
+    .string()
+    .length(6, "Verification code must be 6 digits")
+    .regex(/^\d{6}$/, "Verification code must be 6 digits"),
 });
 
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;

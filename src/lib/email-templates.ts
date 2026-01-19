@@ -533,3 +533,48 @@ export function passwordResetTemplate(params: {
     "This is a security notification from ServDesk."
   );
 }
+
+// =============================================================================
+// VERIFICATION CODE EMAIL TEMPLATE
+// =============================================================================
+
+/** Verification code data for email templates */
+export interface VerificationCodeEmailData {
+  email: string;
+  code: string;
+}
+
+/**
+ * Template for email verification code during invitation acceptance.
+ * Sent when user requests to verify their email address.
+ */
+export function verificationCodeTemplate(params: {
+  email: string;
+  code: string;
+}): string {
+  const { email, code } = params;
+
+  const content = `
+    <p>Hello,</p>
+
+    <p>You are setting up your ServDesk account for <strong>${escapeHtml(email)}</strong>.</p>
+
+    <div style="${baseStyles.ticketBox}">
+      <div style="${baseStyles.ticketNumber}">Verification Code</div>
+      <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 16px 0; font-family: monospace;">
+        ${escapeHtml(code)}
+      </div>
+    </div>
+
+    <p>Enter this code in the account setup form to verify your email address.</p>
+
+    <p style="${baseStyles.muted}">This code will expire in <strong>10 minutes</strong>.</p>
+
+    <p style="${baseStyles.muted}">If you did not request this code, you can safely ignore this email.</p>
+  `;
+
+  return wrapInLayout(
+    content,
+    "This is a security notification from ServDesk."
+  );
+}

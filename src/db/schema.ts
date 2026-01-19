@@ -417,6 +417,7 @@ export type NewInboundEvent = typeof inboundEvents.$inferInsert;
 /**
  * User invitations for SUPER_ADMIN to invite new users.
  * Invitations expire after 7 days and are one-time use.
+ * Email verification is required before account creation.
  */
 export const invitations = sqliteTable(
   "invitations",
@@ -443,6 +444,18 @@ export const invitations = sqliteTable(
 
     /** Timestamp when invitation was accepted (null if not accepted) */
     acceptedAt: integer("accepted_at", { mode: "timestamp" }),
+
+    /** 6-digit verification code sent to email (null if not requested) */
+    verificationCode: text("verification_code"),
+
+    /** Verification code expiration timestamp (10 minutes from generation) */
+    verificationCodeExpiresAt: integer("verification_code_expires_at", { mode: "timestamp" }),
+
+    /** Number of failed verification attempts (max 5 before lockout) */
+    verificationAttempts: integer("verification_attempts").notNull().default(0),
+
+    /** Number of verification codes sent (max 3 per invitation) */
+    verificationCodesSent: integer("verification_codes_sent").notNull().default(0),
 
     /** Record creation timestamp */
     createdAt: integer("created_at", { mode: "timestamp" })

@@ -2,6 +2,11 @@
  * Accept Invitation API Route
  *
  * POST: Accept an invitation and create user account (public endpoint)
+ *
+ * Security:
+ * - Requires email verification code
+ * - Max 5 verification attempts before lockout
+ * - Code expires in 10 minutes
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,6 +19,9 @@ import { eq, and, gt, isNull } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 
 export const runtime = "edge";
+
+/** Maximum number of verification attempts before lockout */
+const MAX_VERIFICATION_ATTEMPTS = 5;
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -45,7 +53,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { name, password } = validationResult.data;
+    const { name, password, verificationCode } = validationResult.data;
 
     // Get Cloudflare context
     const { env } = await getCloudflareContext();
@@ -95,6 +103,53 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Check if invitation is locked due to too many verification attempts
+    if (invitation.verificationAttempts >= MAX_VERIFICATION_ATTEMPTS) {
+      return NextResponse.json(
+        { error: "This invitation has been locked due to too many failed verification attempts. Please contact support." },
+        { status: 423 }
+      );
+    }
+
+    // Verify the verification code
+    if (!invitation.verificationCode) {
+      return NextResponse.json(
+        { error: "Please request a verification code first" },
+        { status: 400 }
+      );
+    }
+
+    // Check if verification code has expired
+    if (!invitation.verificationCodeExpiresAt || invitation.verificationCodeExpiresAt <= new Date()) {
+      return NextResponse.json(
+        { error: "Verification code has expired. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
+    // Check if the verification code matches
+    if (invitation.verificationCode !== verificationCode) {
+      // Increment failed attempts
+      const newAttempts = invitation.verificationAttempts + 1;
+      await db
+        .update(invitations)
+        .set({ verificationAttempts: newAttempts })
+        .where(eq(invitations.id, invitation.id));
+
+      const remainingAttempts = MAX_VERIFICATION_ATTEMPTS - newAttempts;
+      if (remainingAttempts <= 0) {
+        return NextResponse.json(
+          { error: "Too many failed attempts. This invitation has been locked." },
+          { status: 423 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: `Invalid verification code. ${remainingAttempts} attempt${remainingAttempts === 1 ? "" : "s"} remaining.` },
+        { status: 400 }
+      );
+    }
+
     // Check if user with this email already exists
     const existingUser = await typedEnv.DB.prepare(
       `SELECT id FROM user WHERE email = ?1 LIMIT 1`
@@ -132,10 +187,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       isActive: true,
     });
 
-    // Mark invitation as accepted
+    // Mark invitation as accepted and clear verification code
     await db
       .update(invitations)
-      .set({ acceptedAt: new Date() })
+      .set({
+        acceptedAt: new Date(),
+        verificationCode: null,
+        verificationCodeExpiresAt: null,
+      })
       .where(eq(invitations.id, invitation.id));
 
     // Log audit

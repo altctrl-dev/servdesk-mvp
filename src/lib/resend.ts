@@ -18,6 +18,7 @@ import {
   assignmentTemplate,
   invitationTemplate,
   passwordResetTemplate,
+  verificationCodeTemplate,
   type TicketEmailData,
   type CustomerEmailData,
   type MessageEmailData,
@@ -663,6 +664,51 @@ export async function sendPasswordResetEmail(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Error sending password reset email:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Sends a verification code email to verify email ownership during invitation acceptance.
+ * Only sends if RESEND_API_KEY is configured.
+ */
+export async function sendVerificationCodeEmail(
+  env: CloudflareEnv,
+  params: {
+    email: string;
+    code: string;
+  }
+): Promise<EmailSendResult> {
+  // Check if Resend is configured
+  if (!env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not configured, skipping verification code email");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const resend = getResendClient(env);
+
+  const html = verificationCodeTemplate({
+    email: params.email,
+    code: params.code,
+  });
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.SUPPORT_EMAIL_FROM,
+      to: params.email,
+      subject: "Your ServDesk verification code",
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send verification code email:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error sending verification code email:", message);
     return { success: false, error: message };
   }
 }
