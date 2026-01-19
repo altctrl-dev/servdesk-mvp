@@ -348,7 +348,7 @@ async function handleNewTicket(
     "INBOUND"
   );
 
-  // Send confirmation email to customer
+  // Send confirmation email to customer (optional - don't fail if email not configured)
   const ticketEmailData = {
     ticketNumber: newTicket.ticketNumber,
     subject: newTicket.subject,
@@ -361,20 +361,30 @@ async function handleNewTicket(
     name: customer.name,
   };
 
-  await sendTicketCreatedEmail(env, {
-    ticket: ticketEmailData,
-    customer: customerEmailData,
-  });
+  // Try to send emails but don't fail ticket creation if email sending fails
+  try {
+    if (env.RESEND_API_KEY && env.SUPPORT_EMAIL_FROM) {
+      await sendTicketCreatedEmail(env, {
+        ticket: ticketEmailData,
+        customer: customerEmailData,
+      });
 
-  // Send notification to all admins
-  const admins = await getAdminUsers(db);
-  if (admins.length > 0) {
-    await sendAdminNotificationEmail(env, {
-      ticket: ticketEmailData,
-      customer: customerEmailData,
-      admins,
-      initialMessage: replyContent || email.textBody,
-    });
+      // Send notification to all admins
+      const admins = await getAdminUsers(db);
+      if (admins.length > 0) {
+        await sendAdminNotificationEmail(env, {
+          ticket: ticketEmailData,
+          customer: customerEmailData,
+          admins,
+          initialMessage: replyContent || email.textBody,
+        });
+      }
+    } else {
+      console.log("Email notifications skipped: RESEND_API_KEY or SUPPORT_EMAIL_FROM not configured");
+    }
+  } catch (emailError) {
+    console.error("Failed to send email notifications:", emailError);
+    // Continue - ticket was created successfully
   }
 
   return {

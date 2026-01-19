@@ -1,4 +1,5 @@
 name = "servdesk-email-worker"
+account_id = "23aa06b3e1cd312579694c6afec2892d"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
