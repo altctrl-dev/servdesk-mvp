@@ -5,6 +5,8 @@
  * Shows invitation details and form for setting up account.
  */
 
+export const runtime = 'edge';
+
 import { AcceptInvitationForm } from "./accept-invitation-form";
 
 interface PageProps {

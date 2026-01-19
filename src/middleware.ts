@@ -14,9 +14,11 @@ const PUBLIC_ROUTES = [
   "/login",
   "/login/mfa",
   "/track",
+  "/invite",
   "/api/auth",
   "/api/health",
   "/api/inbound",
+  "/api/invitations",
   "/api/tickets/track",
 ];
 
