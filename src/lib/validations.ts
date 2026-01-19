@@ -175,6 +175,53 @@ export const userFilterSchema = z.object({
 export type UserFilter = z.infer<typeof userFilterSchema>;
 
 // =============================================================================
+// USER INVITATION
+// =============================================================================
+
+/** Schema for inviting a new user */
+export const inviteUserSchema = z.object({
+  /** User's email address */
+  email: z.string().email("Invalid email format"),
+  /** User role for access control */
+  role: z.enum(USER_ROLES).default("VIEW_ONLY"),
+});
+
+export type InviteUserInput = z.infer<typeof inviteUserSchema>;
+
+/** Schema for accepting an invitation */
+export const acceptInvitationSchema = z.object({
+  /** User's display name */
+  name: z.string().min(1, "Name is required").max(100, "Name too long"),
+  /** User's password */
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password too long"),
+});
+
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
+
+/** Schema for password reset request (SUPER_ADMIN initiated) */
+export const resetPasswordRequestSchema = z.object({
+  /** No additional fields needed - user ID comes from URL */
+});
+
+export type ResetPasswordRequestInput = z.infer<typeof resetPasswordRequestSchema>;
+
+/** Schema for setting new password after reset */
+export const setNewPasswordSchema = z.object({
+  /** Token from the password reset email */
+  token: z.string().min(1, "Token is required"),
+  /** New password */
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password too long"),
+});
+
+export type SetNewPasswordInput = z.infer<typeof setNewPasswordSchema>;
+
+// =============================================================================
 // VALIDATION HELPERS
 // =============================================================================
 

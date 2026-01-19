@@ -411,6 +411,99 @@ export type InboundEvent = typeof inboundEvents.$inferSelect;
 export type NewInboundEvent = typeof inboundEvents.$inferInsert;
 
 // =============================================================================
+// INVITATIONS TABLE
+// =============================================================================
+
+/**
+ * User invitations for SUPER_ADMIN to invite new users.
+ * Invitations expire after 7 days and are one-time use.
+ */
+export const invitations = sqliteTable(
+  "invitations",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Email address to invite */
+    email: text("email").notNull(),
+
+    /** Role to assign when invitation is accepted */
+    role: text("role", { enum: USER_ROLES }).notNull().default("VIEW_ONLY"),
+
+    /** Unique token for the invitation link (cryptographically secure) */
+    token: text("token").notNull().unique(),
+
+    /** User ID of the SUPER_ADMIN who sent the invitation */
+    invitedById: text("invited_by_id").notNull(),
+
+    /** Invitation expiration timestamp (7 days from creation) */
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+
+    /** Timestamp when invitation was accepted (null if not accepted) */
+    acceptedAt: integer("accepted_at", { mode: "timestamp" }),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    uniqueIndex("invitations_token_idx").on(table.token),
+    index("invitations_email_idx").on(table.email),
+    index("invitations_invited_by_id_idx").on(table.invitedById),
+    index("invitations_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
+export type Invitation = typeof invitations.$inferSelect;
+export type NewInvitation = typeof invitations.$inferInsert;
+
+// =============================================================================
+// PASSWORD RESET TOKENS TABLE
+// =============================================================================
+
+/**
+ * Password reset tokens for SUPER_ADMIN-initiated password resets.
+ * Tokens expire after 1 hour and are one-time use.
+ */
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** User ID for whom the password reset is requested */
+    userId: text("user_id").notNull(),
+
+    /** Unique token for the password reset link */
+    token: text("token").notNull().unique(),
+
+    /** Token expiration timestamp (1 hour from creation) */
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+
+    /** Timestamp when token was used (null if not used) */
+    usedAt: integer("used_at", { mode: "timestamp" }),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    uniqueIndex("password_reset_tokens_token_idx").on(table.token),
+    index("password_reset_tokens_user_id_idx").on(table.userId),
+    index("password_reset_tokens_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+// =============================================================================
 // SCHEMA EXPORT (for Drizzle migrations)
 // =============================================================================
 
@@ -421,4 +514,6 @@ export const schema = {
   messages,
   auditLogs,
   inboundEvents,
+  invitations,
+  passwordResetTokens,
 };

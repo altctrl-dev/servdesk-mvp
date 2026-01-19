@@ -47,6 +47,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  KeyRound,
 } from "lucide-react";
 import type { UserRole } from "@/db/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -103,6 +104,42 @@ export function UserTable({
   const { toast } = useToast();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deactivateDialog, setDeactivateDialog] = useState<User | null>(null);
+
+  /** Trigger password reset */
+  async function handleResetPassword(user: User) {
+    setActionLoading(user.id);
+    try {
+      const response = await fetch(`/api/users/${user.id}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send password reset",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Password reset email sent to ${user.email}`,
+      });
+    } catch (error) {
+      console.error("Error sending password reset:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   /** Update user role */
   async function handleRoleChange(userId: string, newRole: UserRole) {
@@ -342,6 +379,16 @@ export function UserTable({
                             />
                           </div>
                           <DropdownMenuSeparator className="sm:hidden" />
+
+                          {/* Reset password */}
+                          {!isSelf && user.isActive && (
+                            <DropdownMenuItem
+                              onClick={() => handleResetPassword(user)}
+                            >
+                              <KeyRound className="mr-2 h-4 w-4" />
+                              Reset Password
+                            </DropdownMenuItem>
+                          )}
 
                           {/* Toggle active status */}
                           {!isSelf && (

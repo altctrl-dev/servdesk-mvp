@@ -5,7 +5,7 @@
  * All templates use inline styles for maximum email client compatibility.
  */
 
-import type { TicketStatus } from "@/db/schema";
+import type { TicketStatus, UserRole } from "@/db/schema";
 
 // =============================================================================
 // TYPES
@@ -17,6 +17,22 @@ export interface TicketEmailData {
   subject: string;
   status: TicketStatus;
   trackingToken: string;
+}
+
+/** Invitation data for email templates */
+export interface InvitationEmailData {
+  email: string;
+  role: UserRole;
+  token: string;
+  expiresAt: Date;
+}
+
+/** Password reset data for email templates */
+export interface PasswordResetEmailData {
+  email: string;
+  name: string | null;
+  token: string;
+  expiresAt: Date;
 }
 
 /** Minimal customer data required for email templates */
@@ -416,5 +432,104 @@ export function assignmentTemplate(params: {
   return wrapInLayout(
     content,
     `Ticket reference: ${ticket.ticketNumber}`
+  );
+}
+
+// =============================================================================
+// INVITATION EMAIL TEMPLATES
+// =============================================================================
+
+/** Role display names for invitation emails */
+const roleDisplayNames: Record<string, string> = {
+  SUPER_ADMIN: "Super Administrator",
+  ADMIN: "Administrator",
+  VIEW_ONLY: "View Only",
+};
+
+/**
+ * Template for user invitation emails.
+ * Sent when a SUPER_ADMIN invites a new user to the system.
+ */
+export function invitationTemplate(params: {
+  invitation: InvitationEmailData;
+  inviterName: string;
+  acceptUrl: string;
+}): string {
+  const { invitation, inviterName, acceptUrl } = params;
+  const roleDisplay = roleDisplayNames[invitation.role] || invitation.role;
+  const expiryDate = invitation.expiresAt.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const content = `
+    <p>Hello,</p>
+
+    <p><strong>${escapeHtml(inviterName)}</strong> has invited you to join ServDesk as a <strong>${escapeHtml(roleDisplay)}</strong>.</p>
+
+    <div style="${baseStyles.ticketBox}">
+      <div style="${baseStyles.ticketNumber}">You're Invited!</div>
+      <div style="${baseStyles.ticketSubject}">
+        Email: ${escapeHtml(invitation.email)}<br>
+        Role: ${escapeHtml(roleDisplay)}
+      </div>
+    </div>
+
+    <p>Click the button below to set up your account:</p>
+
+    <p style="text-align: center;">
+      <a href="${escapeHtml(acceptUrl)}" style="${baseStyles.button}">Accept Invitation</a>
+    </p>
+
+    <p style="${baseStyles.muted}">This invitation will expire on ${expiryDate}.</p>
+
+    <p style="${baseStyles.muted}">If you did not expect this invitation, you can safely ignore this email.</p>
+  `;
+
+  return wrapInLayout(
+    content,
+    "This is an automated invitation from ServDesk."
+  );
+}
+
+/**
+ * Template for password reset emails.
+ * Sent when a SUPER_ADMIN triggers a password reset for a user.
+ */
+export function passwordResetTemplate(params: {
+  user: PasswordResetEmailData;
+  resetUrl: string;
+}): string {
+  const { user, resetUrl } = params;
+  const displayName = user.name || user.email.split("@")[0];
+  const expiryTime = "1 hour";
+
+  const content = `
+    <p>Hi ${escapeHtml(displayName)},</p>
+
+    <p>A password reset has been requested for your ServDesk account.</p>
+
+    <div style="${baseStyles.ticketBox}">
+      <div style="${baseStyles.ticketNumber}">Password Reset</div>
+      <div style="${baseStyles.ticketSubject}">
+        Account: ${escapeHtml(user.email)}
+      </div>
+    </div>
+
+    <p>Click the button below to set a new password:</p>
+
+    <p style="text-align: center;">
+      <a href="${escapeHtml(resetUrl)}" style="${baseStyles.button}">Reset Password</a>
+    </p>
+
+    <p style="${baseStyles.muted}">This link will expire in ${expiryTime}.</p>
+
+    <p style="${baseStyles.muted}">If you did not request this password reset, please contact your administrator immediately.</p>
+  `;
+
+  return wrapInLayout(
+    content,
+    "This is a security notification from ServDesk."
   );
 }

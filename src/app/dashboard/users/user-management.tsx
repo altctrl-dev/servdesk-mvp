@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { UserTable, UserTableSkeleton } from "@/components/admin/user-table";
 import { UserForm } from "@/components/admin/user-form";
+import { InviteUserDialog } from "@/components/admin/invite-user-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,10 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
           </Button>
         </div>
 
-        <UserForm onSuccess={handleRefresh} />
+        <div className="flex items-center gap-2">
+          <InviteUserDialog onSuccess={handleRefresh} />
+          <UserForm onSuccess={handleRefresh} />
+        </div>
       </div>
 
       {/* Error display */}

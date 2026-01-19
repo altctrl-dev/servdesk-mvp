@@ -16,10 +16,14 @@ import {
   statusChangeTemplate,
   adminNotificationTemplate,
   assignmentTemplate,
+  invitationTemplate,
+  passwordResetTemplate,
   type TicketEmailData,
   type CustomerEmailData,
   type MessageEmailData,
   type AssigneeEmailData,
+  type InvitationEmailData,
+  type PasswordResetEmailData,
 } from "./email-templates";
 
 // =============================================================================
@@ -564,5 +568,101 @@ export async function verifyWebhookSignature(
   } catch (err) {
     console.error("Error verifying webhook signature:", err);
     return false;
+  }
+}
+
+// =============================================================================
+// USER INVITATION & PASSWORD RESET EMAILS
+// =============================================================================
+
+/**
+ * Sends an invitation email to a new user.
+ * Only sends if RESEND_API_KEY is configured.
+ */
+export async function sendInvitationEmail(
+  env: CloudflareEnv,
+  params: {
+    invitation: InvitationEmailData;
+    inviterName: string;
+  }
+): Promise<EmailSendResult> {
+  // Check if Resend is configured
+  if (!env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not configured, skipping invitation email");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const resend = getResendClient(env);
+  const acceptUrl = `${env.BASE_URL}/invite/${params.invitation.token}`;
+
+  const html = invitationTemplate({
+    invitation: params.invitation,
+    inviterName: params.inviterName,
+    acceptUrl,
+  });
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.SUPPORT_EMAIL_FROM,
+      to: params.invitation.email,
+      subject: "You've been invited to ServDesk",
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send invitation email:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error sending invitation email:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Sends a password reset email to a user.
+ * Only sends if RESEND_API_KEY is configured.
+ */
+export async function sendPasswordResetEmail(
+  env: CloudflareEnv,
+  params: {
+    user: PasswordResetEmailData;
+  }
+): Promise<EmailSendResult> {
+  // Check if Resend is configured
+  if (!env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not configured, skipping password reset email");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  const resend = getResendClient(env);
+  const resetUrl = `${env.BASE_URL}/reset-password?token=${params.user.token}`;
+
+  const html = passwordResetTemplate({
+    user: params.user,
+    resetUrl,
+  });
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.SUPPORT_EMAIL_FROM,
+      to: params.user.email,
+      subject: "Reset your ServDesk password",
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send password reset email:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error sending password reset email:", message);
+    return { success: false, error: message };
   }
 }
