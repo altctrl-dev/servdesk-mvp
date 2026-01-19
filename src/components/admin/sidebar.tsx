@@ -70,14 +70,16 @@ const adminSection: NavSection = {
       icon: Users,
       requiredRole: "SUPER_ADMIN",
     },
-    {
-      title: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-      requiredRole: "SUPER_ADMIN",
-    },
   ],
 };
+
+const bottomNavItems: NavItem[] = [
+  {
+    title: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
+  },
+];
 
 interface SidebarProps {
   userRole: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
@@ -201,6 +203,14 @@ function SidebarNav({
     userRole === "SUPER_ADMIN" ||
     (userRole === "ADMIN" && adminSection.requiredRole !== "SUPER_ADMIN");
 
+  // Filter bottom nav items based on user role
+  const filteredBottomNavItems = bottomNavItems.filter((item) => {
+    if (!item.requiredRole) return true;
+    if (userRole === "SUPER_ADMIN") return true;
+    if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
+    return false;
+  });
+
   return (
     <nav className="flex flex-col gap-1">
       {filteredNavItems.map((item) => {
@@ -220,14 +230,24 @@ function SidebarNav({
       })}
 
       {showAdminSection && (
-        <div className="mt-4 pt-4 border-t">
-          <NavSectionCollapsible
-            section={adminSection}
-            userRole={userRole}
-            onNavigate={onNavigate}
-          />
-        </div>
+        <NavSectionCollapsible
+          section={adminSection}
+          userRole={userRole}
+          onNavigate={onNavigate}
+        />
       )}
+
+      {filteredBottomNavItems.map((item) => {
+        const isActive = pathname.startsWith(item.href);
+        return (
+          <NavLink
+            key={item.href}
+            item={item}
+            isActive={isActive}
+            onClick={onNavigate}
+          />
+        );
+      })}
     </nav>
   );
 }
