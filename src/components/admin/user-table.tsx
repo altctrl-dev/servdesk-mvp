@@ -48,6 +48,10 @@ import {
   ChevronRight,
   Loader2,
   KeyRound,
+  Clock,
+  Mail,
+  Trash2,
+  Hash,
 } from "lucide-react";
 import type { UserRole } from "@/db/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +71,15 @@ interface User {
   createdAt: string | null;
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  role: UserRole;
+  token: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -76,6 +89,7 @@ interface Pagination {
 
 interface UserTableProps {
   users: User[];
+  pendingInvitations?: PendingInvitation[];
   pagination: Pagination;
   currentUserId: string;
   isLoading?: boolean;
@@ -95,6 +109,7 @@ function formatDate(dateString: string | null): string {
 
 export function UserTable({
   users,
+  pendingInvitations = [],
   pagination,
   currentUserId,
   isLoading,
@@ -104,6 +119,116 @@ export function UserTable({
   const { toast } = useToast();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deactivateDialog, setDeactivateDialog] = useState<User | null>(null);
+  const [cancelInviteDialog, setCancelInviteDialog] = useState<PendingInvitation | null>(null);
+
+  /** Resend full invitation email with link */
+  async function handleResendInvitation(invitation: PendingInvitation) {
+    setActionLoading(invitation.id);
+    try {
+      const response = await fetch(`/api/invitations/${invitation.token}/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to resend invitation",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Invitation email resent to ${invitation.email}`,
+      });
+    } catch (error) {
+      console.error("Error resending invitation:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  /** Resend just the verification code */
+  async function handleResendVerificationCode(invitation: PendingInvitation) {
+    setActionLoading(invitation.id);
+    try {
+      const response = await fetch(`/api/invitations/${invitation.token}/send-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send verification code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Verification code sent to ${invitation.email}`,
+      });
+    } catch (error) {
+      console.error("Error sending verification code:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  /** Cancel invitation */
+  async function handleCancelInvitation(invitation: PendingInvitation) {
+    setActionLoading(invitation.id);
+    try {
+      const response = await fetch(`/api/invitations/${invitation.token}`, {
+        method: "DELETE",
+      });
+
+      const result: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to cancel invitation",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Invitation cancelled for ${invitation.email}`,
+      });
+      onRefresh();
+    } catch (error) {
+      console.error("Error cancelling invitation:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+      setCancelInviteDialog(null);
+    }
+  }
 
   /** Trigger password reset */
   async function handleResetPassword(user: User) {
@@ -236,7 +361,7 @@ export function UserTable({
     return <UserTableSkeleton />;
   }
 
-  if (users.length === 0) {
+  if (users.length === 0 && pendingInvitations.length === 0) {
     return (
       <div className="rounded-md border">
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -421,6 +546,101 @@ export function UserTable({
                   </TableRow>
                 );
               })}
+              {/* Pending Invitations */}
+              {pendingInvitations.map((invitation) => {
+                const isActionLoading = actionLoading === invitation.id;
+
+                return (
+                  <TableRow key={`invite-${invitation.id}`} className="bg-muted/30">
+                    {/* User info */}
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-muted-foreground">
+                          Pending Invitation
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {invitation.email}
+                        </span>
+                        {/* Show role on mobile */}
+                        <div className="mt-1 sm:hidden">
+                          <RoleBadge role={invitation.role} />
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Role */}
+                    <TableCell className="hidden sm:table-cell">
+                      <RoleBadge role={invitation.role} />
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 w-fit text-amber-600 border-amber-300"
+                      >
+                        <Clock className="h-3 w-3" />
+                        Pending
+                      </Badge>
+                    </TableCell>
+
+                    {/* 2FA Status */}
+                    <TableCell className="hidden md:table-cell">
+                      <span className="text-sm text-muted-foreground">—</span>
+                    </TableCell>
+
+                    {/* Created date */}
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-sm">{formatDate(invitation.createdAt)}</span>
+                    </TableCell>
+
+                    {/* Actions */}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={isActionLoading}
+                          >
+                            {isActionLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleResendInvitation(invitation)}
+                          >
+                            <Mail className="mr-2 h-4 w-4" />
+                            Resend Invitation Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleResendVerificationCode(invitation)}
+                          >
+                            <Hash className="mr-2 h-4 w-4" />
+                            Resend Verification Code
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setCancelInviteDialog(invitation)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Cancel Invitation
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -480,6 +700,34 @@ export function UserTable({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Invitation Confirmation Dialog */}
+      <AlertDialog
+        open={!!cancelInviteDialog}
+        onOpenChange={(open) => !open && setCancelInviteDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel the invitation for{" "}
+              <strong>{cancelInviteDialog?.email}</strong>?
+              They will no longer be able to accept the invitation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Invitation</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                cancelInviteDialog && handleCancelInvitation(cancelInviteDialog)
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Invitation
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

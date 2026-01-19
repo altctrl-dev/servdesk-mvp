@@ -27,6 +27,15 @@ interface User {
   createdAt: string | null;
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  role: UserRole;
+  token: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -36,6 +45,7 @@ interface Pagination {
 
 interface UsersResponse {
   users: User[];
+  pendingInvitations: PendingInvitation[];
   pagination: Pagination;
 }
 
@@ -49,6 +59,7 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
   const searchParams = useSearchParams();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -86,6 +97,7 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
       }
 
       setUsers(data.users);
+      setPendingInvitations(data.pendingInvitations || []);
       setPagination(data.pagination);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -152,6 +164,7 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
       ) : (
         <UserTable
           users={users}
+          pendingInvitations={pendingInvitations}
           pagination={pagination}
           currentUserId={currentUserId}
           isLoading={isLoading}

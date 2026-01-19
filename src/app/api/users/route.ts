@@ -8,11 +8,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@/lib/cf-context";
 import { createAuth } from "@/lib/auth";
-import { getDb, userProfiles } from "@/db";
+import { getDb, userProfiles, invitations } from "@/db";
 import { requireRole } from "@/lib/rbac";
 import { createUserSchema, userFilterSchema, safeValidate } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, isNull, gt } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 
 export const runtime = 'edge';
@@ -139,8 +139,30 @@ export async function GET(request: NextRequest) {
       createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
     }));
 
+    // Fetch pending invitations (not accepted, not expired)
+    const pendingInvitations = await db
+      .select()
+      .from(invitations)
+      .where(
+        and(
+          isNull(invitations.acceptedAt),
+          gt(invitations.expiresAt, new Date())
+        )
+      )
+      .orderBy(invitations.createdAt);
+
+    const formattedInvitations = pendingInvitations.map((inv) => ({
+      id: inv.id,
+      email: inv.email,
+      role: inv.role,
+      token: inv.token,
+      expiresAt: inv.expiresAt.toISOString(),
+      createdAt: inv.createdAt.toISOString(),
+    }));
+
     return NextResponse.json({
       users,
+      pendingInvitations: formattedInvitations,
       pagination: {
         page: filters.page,
         limit: filters.limit,

@@ -138,8 +138,12 @@ export async function POST(request: NextRequest) {
         .where(eq(passwordResetTokens.id, existingToken.id));
     } else {
       // Create new password reset token record
+      // Note: token and expiresAt fields are required by original schema but not used in self-service flow
+      // We use verificationCode and verificationCodeExpiresAt instead
       await db.insert(passwordResetTokens).values({
         id: generateId(),
+        token: generateId(), // Required by schema, not used in self-service flow
+        expiresAt: verificationCodeExpiresAt, // Required by schema
         userId: existingUser.id,
         email: normalizedEmail,
         verificationCode,
@@ -151,11 +155,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Send verification code email
-    // Note: We don't reveal success/failure to prevent email enumeration
-    await sendPasswordResetCodeEmail(typedEnv, {
+    const emailResult = await sendPasswordResetCodeEmail(typedEnv, {
       email: normalizedEmail,
       code: verificationCode,
     });
+
+    // Log email result for debugging (visible in Cloudflare logs)
+    if (!emailResult.success) {
+      console.error("Failed to send password reset code email:", emailResult.error);
+    } else {
+      console.log("Password reset code email sent successfully:", emailResult.messageId);
+    }
 
     // Always return success
     return NextResponse.json({

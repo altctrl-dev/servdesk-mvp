@@ -5,6 +5,7 @@
  *
  * Provides navigation links for the admin dashboard.
  * Responsive design with mobile sheet support.
+ * Supports collapsible sections for admin items.
  */
 
 import Link from "next/link";
@@ -16,18 +17,33 @@ import {
   Settings,
   Menu,
   X,
+  Shield,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+}
+
+interface NavSection {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredRole?: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+  items: NavItem[];
 }
 
 const navItems: NavItem[] = [
@@ -41,19 +57,27 @@ const navItems: NavItem[] = [
     href: "/dashboard/tickets",
     icon: Ticket,
   },
-  {
-    title: "Users",
-    href: "/dashboard/users",
-    icon: Users,
-    requiredRole: "SUPER_ADMIN",
-  },
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    requiredRole: "SUPER_ADMIN",
-  },
 ];
+
+const adminSection: NavSection = {
+  title: "Admin",
+  icon: Shield,
+  requiredRole: "SUPER_ADMIN",
+  items: [
+    {
+      title: "Users",
+      href: "/dashboard/users",
+      icon: Users,
+      requiredRole: "SUPER_ADMIN",
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+      requiredRole: "SUPER_ADMIN",
+    },
+  ],
+};
 
 interface SidebarProps {
   userRole: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
@@ -63,10 +87,12 @@ function NavLink({
   item,
   isActive,
   onClick,
+  indented = false,
 }: {
   item: NavItem;
   isActive: boolean;
   onClick?: () => void;
+  indented?: boolean;
 }) {
   return (
     <Link
@@ -74,6 +100,7 @@ function NavLink({
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+        indented && "ml-4",
         isActive
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -82,6 +109,72 @@ function NavLink({
       <item.icon className="h-4 w-4" />
       {item.title}
     </Link>
+  );
+}
+
+function NavSectionCollapsible({
+  section,
+  userRole,
+  onNavigate,
+}: {
+  section: NavSection;
+  userRole: string;
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+
+  // Check if any child is active
+  const hasActiveChild = section.items.some((item) =>
+    pathname.startsWith(item.href)
+  );
+
+  const [isOpen, setIsOpen] = useState(hasActiveChild);
+
+  // Filter items based on role
+  const filteredItems = section.items.filter((item) => {
+    if (!item.requiredRole) return true;
+    if (userRole === "SUPER_ADMIN") return true;
+    if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
+    return false;
+  });
+
+  if (filteredItems.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+            hasActiveChild
+              ? "text-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <section.icon className="h-4 w-4" />
+          {section.title}
+          {isOpen ? (
+            <ChevronDown className="ml-auto h-4 w-4" />
+          ) : (
+            <ChevronRight className="ml-auto h-4 w-4" />
+          )}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1 pt-1">
+        {filteredItems.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          return (
+            <NavLink
+              key={item.href}
+              item={item}
+              isActive={isActive}
+              onClick={onNavigate}
+              indented
+            />
+          );
+        })}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -94,13 +187,19 @@ function SidebarNav({
 }) {
   const pathname = usePathname();
 
-  // Filter nav items based on user role
+  // Filter top-level nav items based on user role
   const filteredNavItems = navItems.filter((item) => {
     if (!item.requiredRole) return true;
     if (userRole === "SUPER_ADMIN") return true;
     if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
     return false;
   });
+
+  // Check if admin section should be shown
+  const showAdminSection =
+    !adminSection.requiredRole ||
+    userRole === "SUPER_ADMIN" ||
+    (userRole === "ADMIN" && adminSection.requiredRole !== "SUPER_ADMIN");
 
   return (
     <nav className="flex flex-col gap-1">
@@ -119,6 +218,16 @@ function SidebarNav({
           />
         );
       })}
+
+      {showAdminSection && (
+        <div className="mt-4 pt-4 border-t">
+          <NavSectionCollapsible
+            section={adminSection}
+            userRole={userRole}
+            onNavigate={onNavigate}
+          />
+        </div>
+      )}
     </nav>
   );
 }

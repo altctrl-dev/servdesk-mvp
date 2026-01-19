@@ -130,11 +130,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .where(eq(invitations.id, invitation.id));
 
     // Send verification code email
-    // Note: We don't reveal success/failure to prevent email enumeration
-    await sendVerificationCodeEmail(typedEnv, {
+    const emailResult = await sendVerificationCodeEmail(typedEnv, {
       email: invitation.email,
       code: verificationCode,
     });
+
+    // Log email result for debugging (visible in Cloudflare logs)
+    if (!emailResult.success) {
+      console.error("Failed to send verification code email:", emailResult.error);
+    } else {
+      console.log("Verification code email sent successfully:", emailResult.messageId);
+    }
 
     // Always return success (don't reveal if email was actually sent for security)
     return NextResponse.json({
