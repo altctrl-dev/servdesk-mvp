@@ -4,48 +4,161 @@
 
 @layer base {
   :root {
+    /* =========================================================
+       SERVDESK DESIGN TOKENS - LIGHT MODE
+       ========================================================= */
+
+    /* Core Colors */
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 222 47% 11%;
+    --surface: 210 40% 98%;
+
+    /* Card & Popover */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary - Brand Blue */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent */
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 142 72% 40%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Info */
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
+
+    /* Sidebar */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-muted: 220 14% 96%;
+    --sidebar-hover: 220 14% 93%;
+    --sidebar-active: 217 91% 95%;
+    --sidebar-active-foreground: 217 91% 45%;
+
+    /* Ticket Status Colors */
+    --status-new: 217 91% 60%;
+    --status-open: 38 92% 50%;
+    --status-pending-customer: 263 70% 50%;
+    --status-resolved: 142 72% 40%;
+    --status-closed: 220 9% 46%;
+
+    /* Priority Colors */
+    --priority-urgent: 0 84% 60%;
+    --priority-high: 27 96% 61%;
+    --priority-normal: 220 9% 46%;
+
+    /* Radius */
+    --radius: 0.625rem;
+
+    /* Layout */
+    --sidebar-width: 256px;
+    --sidebar-width-collapsed: 64px;
+    --navbar-height: 56px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    /* =========================================================
+       SERVDESK DESIGN TOKENS - DARK MODE
+       ========================================================= */
+
+    /* Core Colors */
+    --background: 224 71% 4%;
+    --foreground: 210 20% 98%;
+    --surface: 222 47% 11%;
+
+    /* Card & Popover */
+    --card: 222 47% 11%;
+    --card-foreground: 210 20% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 20% 98%;
+
+    /* Primary - Brand Blue */
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 11%;
+
+    /* Secondary */
+    --secondary: 217 19% 17%;
+    --secondary-foreground: 210 20% 98%;
+
+    /* Muted */
+    --muted: 217 19% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent */
+    --accent: 217 19% 17%;
+    --accent-foreground: 210 20% 98%;
+
+    /* Destructive */
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 20% 98%;
+
+    /* Success */
+    --success: 142 69% 45%;
+    --success-foreground: 210 20% 98%;
+
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    /* Info */
+    --info: 217 91% 65%;
+    --info-foreground: 222 47% 11%;
+
+    /* Borders & Inputs */
+    --border: 217 19% 17%;
+    --input: 217 19% 17%;
+    --ring: 217 91% 65%;
+
+    /* Sidebar */
+    --sidebar: 224 71% 4%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-border: 217 19% 17%;
+    --sidebar-muted: 217 19% 17%;
+    --sidebar-hover: 217 19% 20%;
+    --sidebar-active: 217 91% 15%;
+    --sidebar-active-foreground: 217 91% 68%;
+
+    /* Shadows - Stronger for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -53,7 +166,61 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .transition-fast {
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  .transition-slow {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-0.5 shadow-md;
+  }
+
+  /* Button press effect */
+  .btn-press:active {
+    @apply scale-[0.97];
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 }

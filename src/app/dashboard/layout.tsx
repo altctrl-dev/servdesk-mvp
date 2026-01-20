@@ -2,19 +2,17 @@
  * Dashboard Layout
  *
  * Provides the main layout structure for the admin dashboard.
- * Includes sidebar navigation and header with user info.
+ * Uses the reusable LayoutWrapper with dashboard-specific configuration.
  * Protected by authentication - redirects to login if not authenticated.
  */
 
 import { redirect } from "next/navigation";
 import { getSessionWithRole } from "@/lib/rbac";
-import { Sidebar } from "@/components/admin/sidebar";
-import { Header } from "@/components/admin/header";
-import { Toaster } from "@/components/ui/toaster";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
-export default async function DashboardLayout({
+export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
@@ -30,26 +28,15 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar userRole={session.role} />
-
-      <div className="flex flex-1 flex-col">
-        <Header
-          user={{
-            id: session.user.id,
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-          }}
-          role={session.role}
-        />
-
-        <main className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6">
-          {children}
-        </main>
-      </div>
-
-      <Toaster />
-    </div>
+    <DashboardLayout
+      user={{
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      }}
+      role={session.role}
+    >
+      {children}
+    </DashboardLayout>
   );
 }
