@@ -7,7 +7,7 @@
  * Used in the ticket detail page sidebar.
  */
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,13 @@ interface Ticket {
   customer: Customer | null;
 }
 
+interface AssignableUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+}
+
 interface TicketInfoPanelProps {
   ticket: Ticket;
   canChangeStatus: boolean;
@@ -85,13 +92,34 @@ function formatDate(date: Date | string | null): string {
 export function TicketInfoPanel({
   ticket,
   canChangeStatus,
-  canAssign: _canAssign,
+  canAssign,
 }: TicketInfoPanelProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isAssigning, setIsAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customerOpen, setCustomerOpen] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [assignableUsers, setAssignableUsers] = useState<AssignableUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Fetch assignable users on mount if canAssign is true
+  useEffect(() => {
+    if (canAssign) {
+      setLoadingUsers(true);
+      fetch("/api/users/assignable")
+        .then((res) => res.json() as Promise<{ users?: AssignableUser[] }>)
+        .then((data) => {
+          setAssignableUsers(data.users || []);
+        })
+        .catch((err) => {
+          console.error("Failed to load assignable users:", err);
+        })
+        .finally(() => {
+          setLoadingUsers(false);
+        });
+    }
+  }, [canAssign]);
 
   const handleStatusChange = async (newStatus: string) => {
     setError(null);
@@ -117,6 +145,37 @@ export function TicketInfoPanel({
       }
     });
   };
+
+  const handleAssignChange = async (userId: string) => {
+    setError(null);
+    setIsAssigning(true);
+
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/assign`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json() as { error?: string };
+        throw new Error(data.error || "Failed to assign ticket");
+      }
+
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Find current assignee name
+  const currentAssignee = assignableUsers.find(
+    (u) => u.id === ticket.assignedToId
+  );
 
   return (
     <div className="space-y-4">
@@ -173,9 +232,45 @@ export function TicketInfoPanel({
 
           <div className="flex items-center justify-between">
             <Label className="text-muted-foreground">Assigned</Label>
-            <span className="text-sm">
-              {ticket.assignedToId ? "Assigned" : "Unassigned"}
-            </span>
+            {canAssign ? (
+              <Select
+                value={ticket.assignedToId || "unassigned"}
+                onValueChange={(value) => {
+                  if (value !== "unassigned") {
+                    handleAssignChange(value);
+                  }
+                }}
+                disabled={isAssigning || loadingUsers}
+              >
+                <SelectTrigger className="w-[160px] h-8">
+                  {isAssigning || loadingUsers ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SelectValue>
+                      {currentAssignee
+                        ? currentAssignee.name || currentAssignee.email
+                        : "Unassigned"}
+                    </SelectValue>
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned" disabled>
+                    Unassigned
+                  </SelectItem>
+                  {assignableUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name || user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm">
+                {currentAssignee
+                  ? currentAssignee.name || currentAssignee.email
+                  : "Unassigned"}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
