@@ -10,8 +10,10 @@ import { getDb, tickets, messages, customers } from "@/db";
 import { requireAuth, canViewAllTickets } from "@/lib/rbac";
 import { ticketReplySchema, safeValidate } from "@/lib/validations";
 import { logMessageAdded } from "@/lib/audit";
+import { sendTicketReplyEmail } from "@/lib/resend";
 import { eq } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
+import type { TicketStatus } from "@/db/schema";
 
 export const runtime = 'edge';
 
@@ -56,6 +58,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const [ticket] = await db
       .select({
         id: tickets.id,
+        ticketNumber: tickets.ticketNumber,
+        subject: tickets.subject,
+        status: tickets.status,
+        trackingToken: tickets.trackingToken,
         assignedToId: tickets.assignedToId,
         customerId: tickets.customerId,
         firstResponseAt: tickets.firstResponseAt,
@@ -79,16 +85,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get customer for outbound messages
-    let toEmail: string | null = null;
+    let customerData: { email: string; name: string | null } | null = null;
     if (type === "OUTBOUND") {
       const [customer] = await db
-        .select({ email: customers.email })
+        .select({ email: customers.email, name: customers.name })
         .from(customers)
         .where(eq(customers.id, ticket.customerId))
         .limit(1);
 
       if (customer) {
-        toEmail = customer.email;
+        customerData = customer;
       }
     }
 
@@ -100,7 +106,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         type,
         content,
         authorId: session.user.id,
-        toEmail: type === "OUTBOUND" ? toEmail : null,
+        toEmail: type === "OUTBOUND" ? customerData?.email ?? null : null,
       })
       .returning();
 
@@ -125,6 +131,36 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       session.user.email,
       type
     );
+
+    // Send email notification to customer for OUTBOUND replies
+    if (type === "OUTBOUND" && customerData) {
+      try {
+        const typedEnv = env as CloudflareEnv;
+        if (typedEnv.RESEND_API_KEY && typedEnv.SUPPORT_EMAIL_FROM) {
+          await sendTicketReplyEmail(typedEnv, {
+            ticket: {
+              ticketNumber: ticket.ticketNumber,
+              subject: ticket.subject,
+              status: ticket.status as TicketStatus,
+              trackingToken: ticket.trackingToken,
+            },
+            customer: {
+              email: customerData.email,
+              name: customerData.name,
+            },
+            message: {
+              content,
+              fromName: session.user.name || session.user.email,
+            },
+          });
+        } else {
+          console.log("Email notification skipped: RESEND_API_KEY or SUPPORT_EMAIL_FROM not configured");
+        }
+      } catch (emailError) {
+        // Log error but don't fail the request - message was saved successfully
+        console.error("Failed to send reply email notification:", emailError);
+      }
+    }
 
     return NextResponse.json(
       {
