@@ -6,6 +6,7 @@
  */
 
 import { cn } from "@/lib/utils";
+import { processEmailContent } from "@/lib/html-utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -153,14 +154,9 @@ function MessageItem({ message }: MessageItemProps) {
             isInternal && "border-dashed"
           )}
         >
-          {message.contentHtml ? (
-            <div
-              className="prose prose-sm max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: message.contentHtml }}
-            />
-          ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          )}
+          <p className="text-sm whitespace-pre-wrap">
+            {processEmailContent(message.content)}
+          </p>
         </div>
 
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
