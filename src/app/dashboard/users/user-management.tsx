@@ -10,7 +10,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { UserTable, UserTableSkeleton } from "@/components/admin/user-table";
-import { UserForm } from "@/components/admin/user-form";
 import { InviteUserDialog } from "@/components/admin/invite-user-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
@@ -146,7 +145,6 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
 
         <div className="flex items-center gap-2">
           <InviteUserDialog onSuccess={handleRefresh} />
-          <UserForm onSuccess={handleRefresh} />
         </div>
       </div>
 
