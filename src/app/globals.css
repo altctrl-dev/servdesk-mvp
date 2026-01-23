@@ -176,12 +176,12 @@
   html.transitioning *,
   html.transitioning *::before,
   html.transitioning *::after {
-    transition: background-color 150ms ease,
-                border-color 150ms ease,
-                color 100ms ease,
-                fill 100ms ease,
-                stroke 100ms ease,
-                box-shadow 150ms ease !important;
+    transition: background-color 75ms ease,
+                border-color 75ms ease,
+                color 50ms ease,
+                fill 50ms ease,
+                stroke 50ms ease,
+                box-shadow 75ms ease !important;
   }
 }
 
