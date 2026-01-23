@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit Tests for Knowledge Base Helper Functions
  *
@@ -8,7 +9,7 @@
  * - Circular reference detection
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   generateSlug,
   ensureUniqueSlug,

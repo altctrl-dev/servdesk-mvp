@@ -9,7 +9,7 @@
  * - DELETE /api/kb/categories/[id] (delete - ADMIN only)
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 /**
  * NOTE: These are integration-style tests that verify the business logic,

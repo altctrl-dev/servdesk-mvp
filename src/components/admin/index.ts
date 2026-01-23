@@ -4,8 +4,6 @@
  * Barrel export for all admin dashboard components.
  */
 
-export { Sidebar, MobileSidebar } from "./sidebar";
-export { Header } from "./header";
 export { StatusBadge } from "./status-badge";
 export { PriorityBadge } from "./priority-badge";
 export { TicketStats, TicketStatsSkeleton } from "./ticket-stats";
