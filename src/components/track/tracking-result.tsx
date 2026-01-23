@@ -56,6 +56,7 @@ function getStatusLabel(status: TicketStatus): string {
     NEW: "New",
     OPEN: "In Progress",
     PENDING_CUSTOMER: "Awaiting Your Reply",
+    ON_HOLD: "On Hold",
     RESOLVED: "Resolved",
     CLOSED: "Closed",
   };

@@ -19,9 +19,9 @@ export const runtime = "edge";
 
 export async function GET() {
   try {
-    // Require at least VIEW_ONLY role to see assignable users
+    // Require at least AGENT role to see assignable users
     try {
-      await requireRole(["SUPER_ADMIN", "ADMIN", "VIEW_ONLY"]);
+      await requireRole(["SUPER_ADMIN", "ADMIN", "AGENT"]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unauthorized";
       const status = message.includes("Forbidden") ? 403 : 401;

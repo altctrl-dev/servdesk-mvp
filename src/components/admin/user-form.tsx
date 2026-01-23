@@ -36,7 +36,7 @@ const createUserFormSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(100, "Password too long"),
-  role: z.enum(["SUPER_ADMIN", "ADMIN", "VIEW_ONLY"]),
+  role: z.enum(["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "AGENT"]),
 });
 
 type CreateUserFormData = z.infer<typeof createUserFormSchema>;
@@ -68,7 +68,7 @@ export function UserForm({ onSuccess }: UserFormProps) {
       email: "",
       name: "",
       password: "",
-      role: "VIEW_ONLY",
+      role: "AGENT",
     },
   });
 

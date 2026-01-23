@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, ShieldCheck, Eye } from "lucide-react";
+import { Shield, ShieldCheck, Users, Headphones } from "lucide-react";
 import type { UserRole } from "@/db/schema";
 
 interface RoleOption {
@@ -28,20 +28,26 @@ const ROLE_OPTIONS: RoleOption[] = [
   {
     value: "SUPER_ADMIN",
     label: "Super Admin",
-    description: "Full system access including user management",
+    description: "Full system access, security, billing, role management",
     icon: ShieldCheck,
   },
   {
     value: "ADMIN",
     label: "Admin",
-    description: "Manage tickets and assignments",
+    description: "Configuration, user management, integrations, exports",
     icon: Shield,
   },
   {
-    value: "VIEW_ONLY",
-    label: "View Only",
-    description: "View assigned tickets only",
-    icon: Eye,
+    value: "SUPERVISOR",
+    label: "Supervisor",
+    description: "Team management, assignments, escalations, reports",
+    icon: Users,
+  },
+  {
+    value: "AGENT",
+    label: "Agent",
+    description: "Handle assigned tickets, basic operations",
+    icon: Headphones,
   },
 ];
 
@@ -91,7 +97,9 @@ export function RoleBadge({ role }: { role: UserRole }) {
       ? "default"
       : role === "ADMIN"
         ? "secondary"
-        : "outline";
+        : role === "SUPERVISOR"
+          ? "secondary"
+          : "outline";
 
   return (
     <Badge variant={variant} className="flex items-center gap-1 w-fit">

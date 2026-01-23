@@ -82,8 +82,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    // Authorization check: VIEW_ONLY users can only see their assigned tickets
-    if (!canViewAllTickets(session.role)) {
+    // Authorization check: AGENT users can only see their assigned tickets
+    if (!canViewAllTickets(session.roles)) {
       if (ticket.assignedToId !== session.user.id) {
         return NextResponse.json(
           { error: "Forbidden: You do not have access to this ticket" },
@@ -99,10 +99,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .where(eq(messages.ticketId, ticketId))
       .orderBy(asc(messages.createdAt));
 
-    // Filter internal messages for VIEW_ONLY users
+    // Filter internal messages for AGENT users
     // All authenticated users can see internal notes (per requirements)
     // If you want to restrict, uncomment below:
-    // const filteredMessages = session.role === "VIEW_ONLY"
+    // const filteredMessages = session.role === "AGENT"
     //   ? ticketMessages.filter(m => m.type !== "INTERNAL")
     //   : ticketMessages;
 
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const includeAuditLogs = searchParams.get("includeAuditLogs") === "true";
 
     let audit = null;
-    if (includeAuditLogs && canViewAuditLogs(session.role)) {
+    if (includeAuditLogs && canViewAuditLogs(session.roles)) {
       audit = await db
         .select()
         .from(auditLogs)

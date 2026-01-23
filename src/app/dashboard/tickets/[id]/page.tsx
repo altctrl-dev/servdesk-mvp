@@ -76,8 +76,8 @@ async function getTicketData(ticketId: string, session: NonNullable<Awaited<Retu
     return null;
   }
 
-  // Authorization check: VIEW_ONLY users can only see their assigned tickets
-  if (!canViewAllTickets(session.role)) {
+  // Authorization check: AGENT users can only see their assigned tickets
+  if (!canViewAllTickets(session.roles)) {
     if (ticket.assignedToId !== session.user.id) {
       return null;
     }
@@ -92,7 +92,7 @@ async function getTicketData(ticketId: string, session: NonNullable<Awaited<Retu
 
   // Get audit logs if user has permission
   let audit = null;
-  if (canViewAuditLogs(session.role)) {
+  if (canViewAuditLogs(session.roles)) {
     audit = await db
       .select()
       .from(auditLogs)
@@ -122,8 +122,8 @@ export default async function TicketDetailPage({ params }: TicketPageProps) {
   }
 
   const { ticket, messages: ticketMessages, auditLogs: audit } = data;
-  const canChangeStatus = canViewAllTickets(session.role);
-  const canAssign = canAssignTickets(session.role);
+  const canChangeStatus = canViewAllTickets(session.roles);
+  const canAssign = canAssignTickets(session.roles);
 
   return (
     <div className="space-y-6">

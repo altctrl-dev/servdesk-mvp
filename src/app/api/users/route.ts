@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         u.image,
         u.createdAt,
         u.twoFactorEnabled,
-        COALESCE(up.role, 'VIEW_ONLY') as role,
+        COALESCE(up.role, 'AGENT') as role,
         COALESCE(up.is_active, 1) as isActive,
         up.failed_login_attempts as failedLoginAttempts,
         up.locked_until as lockedUntil
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       emailVerified: Boolean(row.emailVerified),
       image: row.image,
       twoFactorEnabled: Boolean(row.twoFactorEnabled),
-      role: row.role || "VIEW_ONLY",
+      role: row.role || "AGENT",
       isActive: Boolean(row.isActive ?? 1),
       failedLoginAttempts: row.failedLoginAttempts || 0,
       lockedUntil: row.lockedUntil

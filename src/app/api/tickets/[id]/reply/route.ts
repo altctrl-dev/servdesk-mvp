@@ -74,8 +74,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    // VIEW_ONLY users can only reply to tickets assigned to them
-    if (!canViewAllTickets(session.role)) {
+    // AGENT users can only reply to tickets assigned to them
+    if (!canViewAllTickets(session.roles)) {
       if (ticket.assignedToId !== session.user.id) {
         return NextResponse.json(
           { error: "Forbidden: You do not have access to this ticket" },

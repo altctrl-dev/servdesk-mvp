@@ -4,7 +4,7 @@
  * Admin Header Component
  *
  * Displays user information and provides sign-out functionality.
- * Includes mobile menu trigger.
+ * Includes mobile menu trigger with multi-role RBAC support.
  */
 
 import { MobileSidebar } from "./sidebar";
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import type { UserRole } from "@/db/schema";
+import { getHighestRole } from "@/lib/permissions";
 
 interface HeaderProps {
   user: {
@@ -29,7 +31,8 @@ interface HeaderProps {
     email: string;
     image?: string | null;
   };
-  role: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+  /** User's roles for RBAC filtering */
+  userRoles: UserRole[];
 }
 
 function getRoleDisplayName(role: string): string {
@@ -38,8 +41,10 @@ function getRoleDisplayName(role: string): string {
       return "Super Admin";
     case "ADMIN":
       return "Admin";
-    case "VIEW_ONLY":
-      return "View Only";
+    case "SUPERVISOR":
+      return "Supervisor";
+    case "AGENT":
+      return "Agent";
     default:
       return role;
   }
@@ -56,12 +61,14 @@ function getUserInitials(name: string | null, email: string): string {
   return email.slice(0, 2).toUpperCase();
 }
 
-export function Header({ user, role }: HeaderProps) {
+export function Header({ user, userRoles }: HeaderProps) {
   const initials = getUserInitials(user.name, user.email);
+  // Get the highest role for display purposes
+  const displayRole = getHighestRole(userRoles) || "AGENT";
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <MobileSidebar userRole={role} />
+      <MobileSidebar userRoles={userRoles} />
 
       <div className="flex-1" />
 
@@ -77,7 +84,7 @@ export function Header({ user, role }: HeaderProps) {
                 {user.name || user.email}
               </span>
               <span className="text-xs text-muted-foreground">
-                {getRoleDisplayName(role)}
+                {getRoleDisplayName(displayRole)}
               </span>
             </div>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -95,7 +102,7 @@ export function Header({ user, role }: HeaderProps) {
             <div className="flex items-center justify-between">
               <span>Role</span>
               <Badge variant="secondary" className="text-xs">
-                {getRoleDisplayName(role)}
+                {getRoleDisplayName(displayRole)}
               </Badge>
             </div>
           </DropdownMenuItem>

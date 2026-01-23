@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { getCloudflareContext } from "@/lib/cf-context";
 import { getDb, tickets, customers } from "@/db";
 import { getSessionWithRole, canViewAllTickets } from "@/lib/rbac";
+import { hasAnyRole } from "@/lib/permissions";
 import { eq, desc, and, like, or, count } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 import type { TicketStatus, TicketPriority } from "@/db/schema";
@@ -183,7 +184,7 @@ async function DashboardContent({
   const { env } = await getCloudflareContext();
   const db = getDb((env as CloudflareEnv).DB);
 
-  const canViewAll = canViewAllTickets(session.role);
+  const canViewAll = canViewAllTickets(session.roles);
   const page = parseInt(searchParams.page || "1", 10);
   const limit = 20;
 
@@ -197,6 +198,9 @@ async function DashboardContent({
       limit,
     }),
   ]);
+
+  // Check if user can share views (SUPERVISOR+)
+  const canShareViews = hasAnyRole(session.roles, ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"]);
 
   return (
     <div className="space-y-6">
@@ -214,6 +218,7 @@ async function DashboardContent({
           defaultStatus={searchParams.status || "all"}
           defaultPriority={searchParams.priority || "all"}
           defaultSearch={searchParams.search || ""}
+          canShareViews={canShareViews}
         />
 
         <TicketTable

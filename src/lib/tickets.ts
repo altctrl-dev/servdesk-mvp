@@ -52,9 +52,10 @@ export function generateTrackingToken(): string {
  * Enforces the ticket lifecycle workflow.
  */
 const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  NEW: ["OPEN", "PENDING_CUSTOMER"],
-  OPEN: ["PENDING_CUSTOMER", "RESOLVED", "CLOSED"],
-  PENDING_CUSTOMER: ["OPEN", "RESOLVED", "CLOSED"],
+  NEW: ["OPEN", "PENDING_CUSTOMER", "ON_HOLD"],
+  OPEN: ["PENDING_CUSTOMER", "ON_HOLD", "RESOLVED", "CLOSED"],
+  PENDING_CUSTOMER: ["OPEN", "ON_HOLD", "RESOLVED", "CLOSED"],
+  ON_HOLD: ["OPEN", "PENDING_CUSTOMER", "RESOLVED", "CLOSED"],
   RESOLVED: ["CLOSED", "OPEN"], // OPEN for reopen
   CLOSED: ["OPEN"], // OPEN for reopen
 };

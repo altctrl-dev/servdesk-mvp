@@ -31,7 +31,7 @@ import type { UserRole } from "@/db/schema";
 /** Validation schema for invite user form */
 const inviteUserFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  role: z.enum(["SUPER_ADMIN", "ADMIN", "VIEW_ONLY"]),
+  role: z.enum(["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "AGENT"]),
 });
 
 type InviteUserFormData = z.infer<typeof inviteUserFormSchema>;
@@ -64,7 +64,7 @@ export function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
     resolver: zodResolver(inviteUserFormSchema),
     defaultValues: {
       email: "",
-      role: "VIEW_ONLY",
+      role: "AGENT",
     },
   });
 

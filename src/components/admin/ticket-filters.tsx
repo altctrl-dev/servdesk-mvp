@@ -5,9 +5,10 @@
  *
  * Provides filtering controls for the ticket list.
  * Includes status tabs, priority filter, and search input.
+ * Optionally includes a "Save as View" button for persisting filters.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -18,13 +19,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X } from "lucide-react";
+import { Search, X, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SaveViewDialog } from "./save-view-dialog";
 
 interface TicketFiltersProps {
   defaultStatus?: string;
   defaultPriority?: string;
   defaultSearch?: string;
+  /** When true, hides the status tabs (for status-specific pages) */
+  hideStatusFilter?: boolean;
+  /** Whether to show the Save as View button (default: true) */
+  canSaveViews?: boolean;
+  /** Whether user can share views (default: false) */
+  canShareViews?: boolean;
 }
 
 const statusOptions: { value: string; label: string }[] = [
@@ -47,10 +55,14 @@ export function TicketFilters({
   defaultStatus = "all",
   defaultPriority = "all",
   defaultSearch = "",
+  hideStatusFilter = false,
+  canSaveViews = true,
+  canShareViews = false,
 }: TicketFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   const createQueryString = useCallback(
     (updates: Record<string, string | null>) => {
@@ -99,20 +111,22 @@ export function TicketFilters({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Status tabs */}
-      <Tabs value={defaultStatus} onValueChange={handleStatusChange}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          {statusOptions.map((option) => (
-            <TabsTrigger
-              key={option.value}
-              value={option.value}
-              className="text-xs sm:text-sm"
-            >
-              {option.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {/* Status tabs - hidden on status-specific pages */}
+      {!hideStatusFilter && (
+        <Tabs value={defaultStatus} onValueChange={handleStatusChange}>
+          <TabsList className="flex-wrap h-auto gap-1">
+            {statusOptions.map((option) => (
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className="text-xs sm:text-sm"
+              >
+                {option.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
 
       {/* Search and additional filters */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -141,13 +155,39 @@ export function TicketFilters({
           </Select>
 
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <X className="h-4 w-4 mr-1" />
-              Clear
-            </Button>
+            <>
+              {canSaveViews && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSaveDialogOpen(true)}
+                >
+                  <Bookmark className="h-4 w-4 mr-1" />
+                  Save as View
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Save View Dialog */}
+      {canSaveViews && (
+        <SaveViewDialog
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+          initialFilters={{
+            status: defaultStatus !== "all" ? defaultStatus : undefined,
+            priority: defaultPriority !== "all" ? defaultPriority : undefined,
+            search: defaultSearch || undefined,
+          }}
+          canShare={canShareViews}
+        />
+      )}
     </div>
   );
 }

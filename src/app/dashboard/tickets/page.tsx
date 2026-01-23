@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { getCloudflareContext } from "@/lib/cf-context";
 import { getDb, tickets, customers } from "@/db";
 import { getSessionWithRole, canViewAllTickets } from "@/lib/rbac";
+import { hasAnyRole } from "@/lib/permissions";
 import { eq, desc, and, like, or, count } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 import type { TicketStatus, TicketPriority } from "@/db/schema";
@@ -131,7 +132,7 @@ async function TicketsContent({
   const { env } = await getCloudflareContext();
   const db = getDb((env as CloudflareEnv).DB);
 
-  const canViewAll = canViewAllTickets(session.role);
+  const canViewAll = canViewAllTickets(session.roles);
   const page = parseInt(searchParams.page || "1", 10);
   const limit = 20;
 
@@ -146,6 +147,9 @@ async function TicketsContent({
   // Check if user can create tickets (SUPER_ADMIN only)
   const canCreateTicket = session.role === "SUPER_ADMIN";
 
+  // Check if user can share views (SUPERVISOR+)
+  const canShareViews = hasAnyRole(session.roles, ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"]);
+
   return (
     <div className="space-y-6">
       <TicketPageHeader canCreateTicket={canCreateTicket} />
@@ -155,6 +159,7 @@ async function TicketsContent({
           defaultStatus={searchParams.status || "all"}
           defaultPriority={searchParams.priority || "all"}
           defaultSearch={searchParams.search || ""}
+          canShareViews={canShareViews}
         />
 
         <TicketTable

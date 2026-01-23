@@ -10,6 +10,7 @@ export { StatusBadge } from "./status-badge";
 export { PriorityBadge } from "./priority-badge";
 export { TicketStats, TicketStatsSkeleton } from "./ticket-stats";
 export { TicketFilters } from "./ticket-filters";
+export { SaveViewDialog } from "./save-view-dialog";
 export { TicketTable, TicketTableSkeleton } from "./ticket-table";
 export { MessageThread } from "./message-thread";
 export { ReplyComposer } from "./reply-composer";

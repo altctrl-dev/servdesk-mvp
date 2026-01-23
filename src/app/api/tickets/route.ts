@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
     const conditions = [];
 
     // Role-based filtering
-    if (!canViewAllTickets(session.role)) {
-      // VIEW_ONLY users can only see tickets assigned to them
+    if (!canViewAllTickets(session.roles)) {
+      // AGENT users can only see tickets assigned to them
       conditions.push(eq(tickets.assignedToId, session.user.id));
     }
 

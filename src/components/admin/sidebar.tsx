@@ -5,7 +5,7 @@
  *
  * Provides navigation links for the admin dashboard.
  * Responsive design with mobile sheet support.
- * Supports collapsible sections for admin items.
+ * Supports collapsible sections with multi-role RBAC filtering.
  */
 
 import Link from "next/link";
@@ -20,6 +20,23 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
+  Inbox,
+  Eye,
+  BookOpen,
+  BarChart3,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  UserCircle,
+  UsersRound,
+  HelpCircle,
+  FileText,
+  FolderOpen,
+  Plus,
+  Timer,
+  TrendingUp,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,48 +48,215 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import type { UserRole } from "@/db/schema";
+import { hasAnyRole } from "@/lib/permissions";
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  requiredRole?: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+  /** Roles that can access this item. If undefined, all roles can access. */
+  requiredRoles?: UserRole[];
 }
 
 interface NavSection {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  requiredRole?: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+  /** Roles that can access this section. If undefined, all roles can access. */
+  requiredRoles?: UserRole[];
   items: NavItem[];
 }
 
-const navItems: NavItem[] = [
+// =============================================================================
+// NAVIGATION CONFIGURATION
+// =============================================================================
+
+/** Top-level navigation items (not in sections) */
+const topNavItems: NavItem[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
-  {
-    title: "Tickets",
-    href: "/dashboard/tickets",
-    icon: Ticket,
-  },
 ];
 
-const adminSection: NavSection = {
-  title: "Admin",
-  icon: Shield,
-  requiredRole: "SUPER_ADMIN",
+/** Inbox section with queue views */
+const inboxSection: NavSection = {
+  title: "Inbox",
+  icon: Inbox,
   items: [
     {
-      title: "Users",
-      href: "/dashboard/users",
-      icon: Users,
-      requiredRole: "SUPER_ADMIN",
+      title: "My Queue",
+      href: "/dashboard/inbox/my",
+      icon: UserCircle,
+    },
+    {
+      title: "Team Queue",
+      href: "/dashboard/inbox/team",
+      icon: UsersRound,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "Unassigned",
+      href: "/dashboard/inbox/unassigned",
+      icon: HelpCircle,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
     },
   ],
 };
 
+/** Tickets section with status-based views */
+const ticketsSection: NavSection = {
+  title: "Tickets",
+  icon: Ticket,
+  items: [
+    {
+      title: "Open",
+      href: "/dashboard/tickets/open",
+      icon: Ticket,
+    },
+    {
+      title: "Pending",
+      href: "/dashboard/tickets/pending",
+      icon: Clock,
+    },
+    {
+      title: "On Hold",
+      href: "/dashboard/tickets/on-hold",
+      icon: Timer,
+    },
+    {
+      title: "Resolved",
+      href: "/dashboard/tickets/resolved",
+      icon: CheckCircle,
+    },
+    {
+      title: "Closed",
+      href: "/dashboard/tickets/closed",
+      icon: XCircle,
+    },
+    {
+      title: "Trash",
+      href: "/dashboard/tickets/trash",
+      icon: Trash2,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+  ],
+};
+
+/** Views section for saved ticket views */
+const viewsSection: NavSection = {
+  title: "Views",
+  icon: Eye,
+  items: [
+    {
+      title: "My Views",
+      href: "/dashboard/views",
+      icon: Eye,
+    },
+    {
+      title: "Shared Views",
+      href: "/dashboard/views/shared",
+      icon: UsersRound,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "Create View",
+      href: "/dashboard/views/new",
+      icon: Plus,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+  ],
+};
+
+/** Knowledge Base section for help articles */
+const knowledgeBaseSection: NavSection = {
+  title: "Knowledge Base",
+  icon: BookOpen,
+  items: [
+    {
+      title: "Articles",
+      href: "/dashboard/knowledge-base/articles",
+      icon: FileText,
+    },
+    {
+      title: "Drafts",
+      href: "/dashboard/knowledge-base/drafts",
+      icon: FileText,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "Categories",
+      href: "/dashboard/knowledge-base/categories",
+      icon: FolderOpen,
+      requiredRoles: ["ADMIN", "SUPER_ADMIN"],
+    },
+  ],
+};
+
+/** Reports section for analytics and metrics */
+const reportsSection: NavSection = {
+  title: "Reports",
+  icon: BarChart3,
+  requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+  items: [
+    {
+      title: "Team",
+      href: "/dashboard/reports/team",
+      icon: UsersRound,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "SLA",
+      href: "/dashboard/reports/sla",
+      icon: Timer,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "Volume",
+      href: "/dashboard/reports/volume",
+      icon: TrendingUp,
+      requiredRoles: ["SUPERVISOR", "ADMIN", "SUPER_ADMIN"],
+    },
+  ],
+};
+
+/** Admin section for system administration */
+const adminSection: NavSection = {
+  title: "Admin",
+  icon: Shield,
+  requiredRoles: ["ADMIN", "SUPER_ADMIN"],
+  items: [
+    {
+      title: "Users",
+      href: "/dashboard/admin/users",
+      icon: Users,
+      requiredRoles: ["ADMIN", "SUPER_ADMIN"],
+    },
+    {
+      title: "Roles",
+      href: "/dashboard/admin/roles",
+      icon: KeyRound,
+      requiredRoles: ["SUPER_ADMIN"],
+    },
+  ],
+};
+
+/** All navigation sections in display order */
+const navSections: NavSection[] = [
+  inboxSection,
+  ticketsSection,
+  viewsSection,
+  knowledgeBaseSection,
+  reportsSection,
+  adminSection,
+];
+
+/** Bottom navigation items */
 const bottomNavItems: NavItem[] = [
   {
     title: "Settings",
@@ -81,10 +265,21 @@ const bottomNavItems: NavItem[] = [
   },
 ];
 
+// =============================================================================
+// COMPONENT PROPS
+// =============================================================================
+
 interface SidebarProps {
-  userRole: "SUPER_ADMIN" | "ADMIN" | "VIEW_ONLY";
+  userRoles: UserRole[];
 }
 
+// =============================================================================
+// HELPER COMPONENTS
+// =============================================================================
+
+/**
+ * Renders a single navigation link item
+ */
 function NavLink({
   item,
   isActive,
@@ -114,32 +309,35 @@ function NavLink({
   );
 }
 
+/**
+ * Renders a collapsible navigation section with role-based filtering
+ */
 function NavSectionCollapsible({
   section,
-  userRole,
+  userRoles,
   onNavigate,
 }: {
   section: NavSection;
-  userRole: string;
+  userRoles: UserRole[];
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
+  // Filter items based on user roles
+  const filteredItems = section.items.filter((item) => {
+    if (!item.requiredRoles) return true;
+    return hasAnyRole(userRoles, item.requiredRoles);
+  });
+
   // Check if any child is active
-  const hasActiveChild = section.items.some((item) =>
+  const hasActiveChild = filteredItems.some((item) =>
     pathname.startsWith(item.href)
   );
 
+  // useState must be called unconditionally before any early returns
   const [isOpen, setIsOpen] = useState(hasActiveChild);
 
-  // Filter items based on role
-  const filteredItems = section.items.filter((item) => {
-    if (!item.requiredRole) return true;
-    if (userRole === "SUPER_ADMIN") return true;
-    if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
-    return false;
-  });
-
+  // Don't render section if no items are visible
   if (filteredItems.length === 0) return null;
 
   return (
@@ -180,79 +378,103 @@ function NavSectionCollapsible({
   );
 }
 
+/**
+ * Main sidebar navigation component with role-based filtering
+ */
 function SidebarNav({
-  userRole,
+  userRoles,
   onNavigate,
 }: {
-  userRole: string;
+  userRoles: UserRole[];
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
-  // Filter top-level nav items based on user role
-  const filteredNavItems = navItems.filter((item) => {
-    if (!item.requiredRole) return true;
-    if (userRole === "SUPER_ADMIN") return true;
-    if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
-    return false;
+  // Filter top-level nav items based on user roles
+  const filteredTopNavItems = topNavItems.filter((item) => {
+    if (!item.requiredRoles) return true;
+    return hasAnyRole(userRoles, item.requiredRoles);
   });
 
-  // Check if admin section should be shown
-  const showAdminSection =
-    !adminSection.requiredRole ||
-    userRole === "SUPER_ADMIN" ||
-    (userRole === "ADMIN" && adminSection.requiredRole !== "SUPER_ADMIN");
+  // Filter sections based on user roles
+  const filteredSections = navSections.filter((section) => {
+    // Check if section itself has role requirements
+    if (section.requiredRoles && !hasAnyRole(userRoles, section.requiredRoles)) {
+      return false;
+    }
+    // Check if section has any visible items after filtering
+    const visibleItems = section.items.filter((item) => {
+      if (!item.requiredRoles) return true;
+      return hasAnyRole(userRoles, item.requiredRoles);
+    });
+    return visibleItems.length > 0;
+  });
 
-  // Filter bottom nav items based on user role
+  // Filter bottom nav items based on user roles
   const filteredBottomNavItems = bottomNavItems.filter((item) => {
-    if (!item.requiredRole) return true;
-    if (userRole === "SUPER_ADMIN") return true;
-    if (userRole === "ADMIN" && item.requiredRole !== "SUPER_ADMIN") return true;
-    return false;
+    if (!item.requiredRoles) return true;
+    return hasAnyRole(userRoles, item.requiredRoles);
   });
 
   return (
-    <nav className="flex flex-col gap-1">
-      {filteredNavItems.map((item) => {
-        // For dashboard, only exact match; for others, prefix match
-        const isActive =
-          item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
-        return (
-          <NavLink
-            key={item.href}
-            item={item}
-            isActive={isActive}
-            onClick={onNavigate}
-          />
-        );
-      })}
+    <div className="flex h-full flex-col">
+      <nav className="flex flex-1 flex-col gap-1">
+        {/* Top-level items */}
+        {filteredTopNavItems.map((item) => {
+          // For dashboard, only exact match; for others, prefix match
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
+          return (
+            <NavLink
+              key={item.href}
+              item={item}
+              isActive={isActive}
+              onClick={onNavigate}
+            />
+          );
+        })}
 
-      {showAdminSection && (
-        <NavSectionCollapsible
-          section={adminSection}
-          userRole={userRole}
-          onNavigate={onNavigate}
-        />
+        {/* Collapsible sections */}
+        {filteredSections.map((section) => (
+          <NavSectionCollapsible
+            key={section.title}
+            section={section}
+            userRoles={userRoles}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </nav>
+
+      {/* Bottom navigation - separated with margin */}
+      {filteredBottomNavItems.length > 0 && (
+        <nav className="mt-auto border-t pt-4">
+          {filteredBottomNavItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <NavLink
+                key={item.href}
+                item={item}
+                isActive={isActive}
+                onClick={onNavigate}
+              />
+            );
+          })}
+        </nav>
       )}
-
-      {filteredBottomNavItems.map((item) => {
-        const isActive = pathname.startsWith(item.href);
-        return (
-          <NavLink
-            key={item.href}
-            item={item}
-            isActive={isActive}
-            onClick={onNavigate}
-          />
-        );
-      })}
-    </nav>
+    </div>
   );
 }
 
-export function Sidebar({ userRole }: SidebarProps) {
+// =============================================================================
+// EXPORTED COMPONENTS
+// =============================================================================
+
+/**
+ * Desktop sidebar component
+ */
+export function Sidebar({ userRoles }: SidebarProps) {
   return (
     <aside className="hidden w-64 flex-col border-r bg-background md:flex">
       <div className="flex h-14 items-center border-b px-4">
@@ -262,13 +484,16 @@ export function Sidebar({ userRole }: SidebarProps) {
         </Link>
       </div>
       <ScrollArea className="flex-1 px-3 py-4">
-        <SidebarNav userRole={userRole} />
+        <SidebarNav userRoles={userRoles} />
       </ScrollArea>
     </aside>
   );
 }
 
-export function MobileSidebar({ userRole }: SidebarProps) {
+/**
+ * Mobile sidebar component with sheet overlay
+ */
+export function MobileSidebar({ userRoles }: SidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -300,7 +525,7 @@ export function MobileSidebar({ userRole }: SidebarProps) {
           </Button>
         </div>
         <ScrollArea className="flex-1 px-3 py-4">
-          <SidebarNav userRole={userRole} onNavigate={() => setOpen(false)} />
+          <SidebarNav userRoles={userRoles} onNavigate={() => setOpen(false)} />
         </ScrollArea>
       </SheetContent>
     </Sheet>

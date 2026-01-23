@@ -147,6 +147,7 @@ const statusColors: Record<TicketStatus, { bg: string; text: string }> = {
   NEW: { bg: "#e3f2fd", text: "#1565c0" },
   OPEN: { bg: "#fff3e0", text: "#ef6c00" },
   PENDING_CUSTOMER: { bg: "#fce4ec", text: "#c2185b" },
+  ON_HOLD: { bg: "#fff8e1", text: "#ff8f00" },
   RESOLVED: { bg: "#e8f5e9", text: "#2e7d32" },
   CLOSED: { bg: "#f5f5f5", text: "#616161" },
 };
@@ -155,6 +156,7 @@ const statusLabels: Record<TicketStatus, string> = {
   NEW: "New",
   OPEN: "Open",
   PENDING_CUSTOMER: "Awaiting Your Response",
+  ON_HOLD: "On Hold",
   RESOLVED: "Resolved",
   CLOSED: "Closed",
 };
@@ -443,7 +445,7 @@ export function assignmentTemplate(params: {
 const roleDisplayNames: Record<string, string> = {
   SUPER_ADMIN: "Super Administrator",
   ADMIN: "Administrator",
-  VIEW_ONLY: "View Only",
+  AGENT: "View Only",
 };
 
 /**

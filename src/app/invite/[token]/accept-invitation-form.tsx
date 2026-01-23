@@ -28,7 +28,7 @@ import { Loader2, AlertCircle, CheckCircle, Mail, Shield, KeyRound, RefreshCw } 
 const roleDisplayNames: Record<string, string> = {
   SUPER_ADMIN: "Super Administrator",
   ADMIN: "Administrator",
-  VIEW_ONLY: "View Only",
+  AGENT: "View Only",
 };
 
 /** Cooldown time between code resend requests (in seconds) */

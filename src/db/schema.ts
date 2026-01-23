@@ -12,6 +12,7 @@ import {
   integer,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -20,7 +21,7 @@ import { createId } from "@paralleldrive/cuid2";
 // =============================================================================
 
 /** User roles for access control */
-export const USER_ROLES = ["SUPER_ADMIN", "ADMIN", "VIEW_ONLY"] as const;
+export const USER_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPERVISOR", "AGENT"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 /** Ticket status lifecycle */
@@ -28,6 +29,7 @@ export const TICKET_STATUSES = [
   "NEW",
   "OPEN",
   "PENDING_CUSTOMER",
+  "ON_HOLD",
   "RESOLVED",
   "CLOSED",
 ] as const;
@@ -45,6 +47,10 @@ export const MESSAGE_TYPES = [
   "SYSTEM",
 ] as const;
 export type MessageType = (typeof MESSAGE_TYPES)[number];
+
+/** Knowledge Base article statuses */
+export const KB_ARTICLE_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+export type KBArticleStatus = (typeof KB_ARTICLE_STATUSES)[number];
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -77,7 +83,7 @@ export const userProfiles = sqliteTable(
     userId: text("user_id").primaryKey(),
 
     /** User role for access control */
-    role: text("role", { enum: USER_ROLES }).notNull().default("VIEW_ONLY"),
+    role: text("role", { enum: USER_ROLES }).notNull().default("AGENT"),
 
     /** Whether the user account is active */
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
@@ -106,6 +112,81 @@ export const userProfiles = sqliteTable(
 
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type NewUserProfile = typeof userProfiles.$inferInsert;
+
+// =============================================================================
+// ROLES TABLE
+// =============================================================================
+
+/**
+ * Roles table for multi-role assignment.
+ * Users can have multiple roles (e.g., Agent + Supervisor).
+ */
+export const roles = sqliteTable(
+  "roles",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Role name - matches USER_ROLES enum */
+    name: text("name", { enum: USER_ROLES }).notNull().unique(),
+
+    /** Human-readable description of the role */
+    description: text("description"),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [uniqueIndex("roles_name_idx").on(table.name)]
+);
+
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+
+// =============================================================================
+// USER ROLES JUNCTION TABLE
+// =============================================================================
+
+/**
+ * Junction table for many-to-many user-role relationships.
+ * Allows users to have multiple roles with cumulative permissions.
+ */
+export const userRoles = sqliteTable(
+  "user_roles",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Foreign key to Better Auth user.id */
+    userId: text("user_id").notNull(),
+
+    /** Foreign key to roles table */
+    roleId: text("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+
+    /** User who assigned this role (for audit purposes) */
+    assignedById: text("assigned_by_id"),
+
+    /** When this role was assigned */
+    assignedAt: integer("assigned_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    uniqueIndex("user_roles_user_role_idx").on(table.userId, table.roleId),
+    index("user_roles_user_id_idx").on(table.userId),
+    index("user_roles_role_id_idx").on(table.roleId),
+  ]
+);
+
+export type UserRoleAssignment = typeof userRoles.$inferSelect;
+export type NewUserRoleAssignment = typeof userRoles.$inferInsert;
 
 // =============================================================================
 // CUSTOMERS TABLE
@@ -431,7 +512,7 @@ export const invitations = sqliteTable(
     email: text("email").notNull(),
 
     /** Role to assign when invitation is accepted */
-    role: text("role", { enum: USER_ROLES }).notNull().default("VIEW_ONLY"),
+    role: text("role", { enum: USER_ROLES }).notNull().default("AGENT"),
 
     /** Unique token for the invitation link (cryptographically secure) */
     token: text("token").notNull().unique(),
@@ -540,11 +621,280 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 
 // =============================================================================
+// SAVED VIEWS TABLE
+// =============================================================================
+
+/**
+ * User-created custom views with filter presets.
+ * Users can save filter combinations for quick access to specific ticket lists.
+ * Views can be shared with the team (SUPERVISOR+ can create shared views).
+ */
+export const savedViews = sqliteTable(
+  "saved_views",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** View name */
+    name: text("name").notNull(),
+
+    /** Optional description */
+    description: text("description"),
+
+    /** Foreign key to Better Auth user.id (view owner) */
+    userId: text("user_id").notNull(),
+
+    /** Filter configuration as JSON string */
+    filters: text("filters").notNull().default("{}"),
+
+    /** Optional: columns to display (JSON string array) */
+    columns: text("columns"),
+
+    /** Sort field */
+    sortBy: text("sort_by").default("createdAt"),
+
+    /** Sort direction */
+    sortOrder: text("sort_order", { enum: ["asc", "desc"] }).default("desc"),
+
+    /** Whether this view is shared with the team */
+    isShared: integer("is_shared", { mode: "boolean" }).notNull().default(false),
+
+    /** Whether this is the user's default view */
+    isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+
+    /** Record last update timestamp */
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index("saved_views_user_id_idx").on(table.userId),
+    index("saved_views_shared_idx").on(table.isShared),
+  ]
+);
+
+export type SavedView = typeof savedViews.$inferSelect;
+export type NewSavedView = typeof savedViews.$inferInsert;
+
+/** Type for view filters configuration */
+export interface ViewFilters {
+  status?: TicketStatus[];
+  priority?: TicketPriority[];
+  assignedTo?: string | "unassigned" | "me";
+  search?: string;
+  dateRange?: {
+    from?: string;
+    to?: string;
+  };
+}
+
+// =============================================================================
+// KNOWLEDGE BASE CATEGORIES TABLE
+// =============================================================================
+
+/**
+ * Hierarchical categories for organizing Knowledge Base articles.
+ * Supports parent-child relationships for nested category structures.
+ */
+export const kbCategories = sqliteTable(
+  "kb_categories",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Category name */
+    name: text("name").notNull(),
+
+    /** URL-friendly slug for category */
+    slug: text("slug").notNull().unique(),
+
+    /** Optional category description */
+    description: text("description"),
+
+    /** Parent category ID for nested categories */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parentId: text("parent_id").references((): any => kbCategories.id, {
+      onDelete: "set null",
+    }),
+
+    /** Sort order for display */
+    sortOrder: integer("sort_order").notNull().default(0),
+
+    /** Denormalized count of articles in this category */
+    articleCount: integer("article_count").notNull().default(0),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+
+    /** Record last update timestamp */
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index("kb_categories_parent_id_idx").on(table.parentId),
+    index("kb_categories_slug_idx").on(table.slug),
+  ]
+);
+
+export type KBCategory = typeof kbCategories.$inferSelect;
+export type NewKBCategory = typeof kbCategories.$inferInsert;
+
+// =============================================================================
+// KNOWLEDGE BASE TAGS TABLE
+// =============================================================================
+
+/**
+ * Tags for cross-categorization of Knowledge Base articles.
+ * Enables flexible tagging system for article discovery.
+ */
+export const kbTags = sqliteTable(
+  "kb_tags",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Tag name */
+    name: text("name").notNull(),
+
+    /** URL-friendly slug for tag */
+    slug: text("slug").notNull().unique(),
+
+    /** Denormalized count of articles with this tag */
+    articleCount: integer("article_count").notNull().default(0),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [index("kb_tags_slug_idx").on(table.slug)]
+);
+
+export type KBTag = typeof kbTags.$inferSelect;
+export type NewKBTag = typeof kbTags.$inferInsert;
+
+// =============================================================================
+// KNOWLEDGE BASE ARTICLES TABLE
+// =============================================================================
+
+/**
+ * Core content table for Knowledge Base articles.
+ * Supports draft/published/archived lifecycle with versioning.
+ */
+export const kbArticles = sqliteTable(
+  "kb_articles",
+  {
+    /** Primary key (CUID) */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+
+    /** Article title */
+    title: text("title").notNull(),
+
+    /** URL-friendly slug for article */
+    slug: text("slug").notNull().unique(),
+
+    /** Article content (Markdown or HTML) */
+    content: text("content").notNull(),
+
+    /** Short excerpt for previews */
+    excerpt: text("excerpt"),
+
+    /** Article status in lifecycle */
+    status: text("status", { enum: KB_ARTICLE_STATUSES })
+      .notNull()
+      .default("DRAFT"),
+
+    /** Foreign key to kb_categories table */
+    categoryId: text("category_id").references(() => kbCategories.id, {
+      onDelete: "set null",
+    }),
+
+    /** Foreign key to Better Auth user.id (article author) */
+    authorId: text("author_id").notNull(),
+
+    /** Timestamp when article was published */
+    publishedAt: integer("published_at", { mode: "timestamp" }),
+
+    /** View counter for analytics */
+    viewCount: integer("view_count").notNull().default(0),
+
+    /** Record creation timestamp */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+
+    /** Record last update timestamp */
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index("kb_articles_slug_idx").on(table.slug),
+    index("kb_articles_status_idx").on(table.status),
+    index("kb_articles_category_id_idx").on(table.categoryId),
+    index("kb_articles_author_id_idx").on(table.authorId),
+    index("kb_articles_published_at_idx").on(table.publishedAt),
+  ]
+);
+
+export type KBArticle = typeof kbArticles.$inferSelect;
+export type NewKBArticle = typeof kbArticles.$inferInsert;
+
+// =============================================================================
+// KNOWLEDGE BASE ARTICLE-TAG JUNCTION TABLE
+// =============================================================================
+
+/**
+ * Many-to-many relationship between articles and tags.
+ * Enables flexible tag-based filtering and search.
+ */
+export const kbArticleTags = sqliteTable(
+  "kb_article_tags",
+  {
+    /** Foreign key to kb_articles table (cascade delete) */
+    articleId: text("article_id")
+      .notNull()
+      .references(() => kbArticles.id, { onDelete: "cascade" }),
+
+    /** Foreign key to kb_tags table (cascade delete) */
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => kbTags.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.articleId, table.tagId] }),
+    articleIdIdx: index("kb_article_tags_article_id_idx").on(table.articleId),
+    tagIdIdx: index("kb_article_tags_tag_id_idx").on(table.tagId),
+  })
+);
+
+export type KBArticleTag = typeof kbArticleTags.$inferSelect;
+export type NewKBArticleTag = typeof kbArticleTags.$inferInsert;
+
+// =============================================================================
 // SCHEMA EXPORT (for Drizzle migrations)
 // =============================================================================
 
 export const schema = {
   userProfiles,
+  roles,
+  userRoles,
   customers,
   tickets,
   messages,
@@ -552,4 +902,9 @@ export const schema = {
   inboundEvents,
   invitations,
   passwordResetTokens,
+  savedViews,
+  kbCategories,
+  kbTags,
+  kbArticles,
+  kbArticleTags,
 };

@@ -402,7 +402,7 @@ describe("createUserSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.role).toBe("VIEW_ONLY"); // default
+      expect(result.data.role).toBe("AGENT"); // default
     }
   });
 
@@ -420,7 +420,7 @@ describe("createUserSchema", () => {
   });
 
   it("should accept all valid roles", () => {
-    const roles = ["SUPER_ADMIN", "ADMIN", "VIEW_ONLY"];
+    const roles = ["SUPER_ADMIN", "ADMIN", "AGENT"];
     for (const role of roles) {
       const result = createUserSchema.safeParse({
         email: "test@example.com",

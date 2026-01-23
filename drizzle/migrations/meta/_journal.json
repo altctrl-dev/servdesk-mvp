@@ -36,6 +36,41 @@
       "when": 1768845407030,
       "tag": "0004_sad_typhoid_mary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1769028191847,
+      "tag": "0005_material_mephisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1769028300000,
+      "tag": "0006_add_self_service_password_reset",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1769028400000,
+      "tag": "0007_add_multi_role_rbac",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1769028500000,
+      "tag": "0008_add_saved_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1737689000000,
+      "tag": "0009_add_knowledge_base",
+      "breakpoints": true
     }
   ]
 }

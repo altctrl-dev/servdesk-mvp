@@ -148,7 +148,7 @@ export const createUserSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(100, "Password too long"),
   /** User role for access control */
-  role: z.enum(USER_ROLES).default("VIEW_ONLY"),
+  role: z.enum(USER_ROLES).default("AGENT"),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -183,7 +183,7 @@ export const inviteUserSchema = z.object({
   /** User's email address */
   email: z.string().email("Invalid email format"),
   /** User role for access control */
-  role: z.enum(USER_ROLES).default("VIEW_ONLY"),
+  role: z.enum(USER_ROLES).default("AGENT"),
 });
 
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;

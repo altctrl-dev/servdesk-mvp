@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         u.image,
         u.createdAt,
         u.twoFactorEnabled,
-        COALESCE(up.role, 'VIEW_ONLY') as role,
+        COALESCE(up.role, 'AGENT') as role,
         COALESCE(up.is_active, 1) as isActive,
         up.failed_login_attempts as failedLoginAttempts,
         up.locked_until as lockedUntil
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       emailVerified: Boolean(row.emailVerified),
       image: row.image,
       twoFactorEnabled: Boolean(row.twoFactorEnabled),
-      role: row.role || "VIEW_ONLY",
+      role: row.role || "AGENT",
       isActive: Boolean(row.isActive ?? 1),
       failedLoginAttempts: row.failedLoginAttempts || 0,
       lockedUntil: row.lockedUntil
@@ -198,7 +198,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .where(eq(userProfiles.userId, id))
       .limit(1);
 
-    const oldRole = currentProfile[0]?.role || "VIEW_ONLY";
+    const oldRole = currentProfile[0]?.role || "AGENT";
     const oldIsActive = currentProfile[0]?.isActive ?? true;
 
     // Build update values
@@ -223,7 +223,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       // Create new profile
       await db.insert(userProfiles).values({
         userId: id,
-        role: updates.role || "VIEW_ONLY",
+        role: updates.role || "AGENT",
         isActive: updates.isActive ?? true,
       });
     } else {
@@ -357,7 +357,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       // Create new profile with isActive = false
       await db.insert(userProfiles).values({
         userId: id,
-        role: "VIEW_ONLY",
+        role: "AGENT",
         isActive: false,
       });
     } else {

@@ -34,7 +34,7 @@ export default async function Layout({
         name: session.user.name,
         email: session.user.email,
       }}
-      role={session.role}
+      userRoles={session.roles}
     >
       {children}
     </DashboardLayout>
