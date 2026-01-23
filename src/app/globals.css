@@ -170,6 +170,19 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Smooth theme transitions - applies to all elements */
+  html.transitioning,
+  html.transitioning *,
+  html.transitioning *::before,
+  html.transitioning *::after {
+    transition: background-color 300ms ease-out,
+                border-color 300ms ease-out,
+                color 200ms ease-out,
+                fill 200ms ease-out,
+                stroke 200ms ease-out,
+                box-shadow 300ms ease-out !important;
+  }
 }
 
 @layer utilities {
