@@ -120,6 +120,16 @@ export async function POST(request: NextRequest) {
       inviterName: session.user.name || session.user.email,
     });
 
+    // Log email result for debugging
+    if (!emailResult.success) {
+      console.error("Invitation email failed:", {
+        email: invitation.email,
+        error: emailResult.error,
+        hasApiKey: !!typedEnv.RESEND_API_KEY,
+        hasFromEmail: !!typedEnv.SUPPORT_EMAIL_FROM,
+      });
+    }
+
     return NextResponse.json(
       {
         invitation: {
@@ -129,9 +139,10 @@ export async function POST(request: NextRequest) {
           expiresAt: invitation.expiresAt.toISOString(),
         },
         emailSent: emailResult.success,
+        emailError: emailResult.success ? undefined : emailResult.error,
         message: emailResult.success
           ? "Invitation created and sent successfully"
-          : "Invitation created but email could not be sent",
+          : `Invitation created but email could not be sent: ${emailResult.error}`,
       },
       { status: 201 }
     );

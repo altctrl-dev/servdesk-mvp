@@ -40,6 +40,7 @@ interface ApiResponse {
   error?: string;
   message?: string;
   emailSent?: boolean;
+  emailError?: string;
   invitation?: { id: string; email: string; role: string; expiresAt: string };
 }
 
@@ -92,7 +93,7 @@ export function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
       // Success
       const successMessage = result.emailSent
         ? `Invitation sent to ${data.email}`
-        : `Invitation created for ${data.email} (email not sent - check Resend configuration)`;
+        : `Invitation created for ${data.email} (email failed: ${result.emailError || "check Resend configuration"})`;
       setSuccess(successMessage);
 
       // Reset form and close after short delay
