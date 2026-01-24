@@ -125,8 +125,11 @@ export async function POST(request: NextRequest) {
       console.error("Invitation email failed:", {
         email: invitation.email,
         error: emailResult.error,
-        hasApiKey: !!typedEnv.RESEND_API_KEY,
-        hasFromEmail: !!typedEnv.SUPPORT_EMAIL_FROM,
+        envKeys: Object.keys(typedEnv).filter(k => !k.startsWith('__')),
+        hasApiKeyInEnv: !!typedEnv.RESEND_API_KEY,
+        hasApiKeyInProcess: !!process.env.RESEND_API_KEY,
+        hasFromEmailInEnv: !!typedEnv.SUPPORT_EMAIL_FROM,
+        hasFromEmailInProcess: !!process.env.SUPPORT_EMAIL_FROM,
       });
     }
 
