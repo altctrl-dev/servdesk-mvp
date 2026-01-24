@@ -62,11 +62,21 @@ export type ThreadingHeaders = Record<string, string>;
 // =============================================================================
 
 /**
+ * Gets the Resend API key from environment.
+ * Checks both Cloudflare env bindings and process.env for compatibility.
+ */
+function getResendApiKey(env: CloudflareEnv): string | undefined {
+  return env.RESEND_API_KEY || process.env.RESEND_API_KEY;
+}
+
+/**
  * Creates a Resend client instance.
  * Must be called per-request since env is only available at request time.
  */
-function getResendClient(env: CloudflareEnv): Resend {
-  return new Resend(env.RESEND_API_KEY);
+function getResendClient(env: CloudflareEnv): Resend | null {
+  const apiKey = getResendApiKey(env);
+  if (!apiKey) return null;
+  return new Resend(apiKey);
 }
 
 // =============================================================================
@@ -136,7 +146,11 @@ export async function sendTicketCreatedEmail(
   }
 ): Promise<EmailSendResult> {
   const resend = getResendClient(env);
-  const trackingUrl = `${env.BASE_URL}/track?token=${params.ticket.trackingToken}`;
+  if (!resend) {
+    return { success: false, error: "Email service not configured" };
+  }
+  const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
+  const trackingUrl = `${baseUrl}/track?token=${params.ticket.trackingToken}`;
 
   const html = ticketCreatedTemplate({
     ticket: params.ticket,
@@ -185,7 +199,11 @@ export async function sendTicketReplyEmail(
   }
 ): Promise<EmailSendResult> {
   const resend = getResendClient(env);
-  const trackingUrl = `${env.BASE_URL}/track?token=${params.ticket.trackingToken}`;
+  if (!resend) {
+    return { success: false, error: "Email service not configured" };
+  }
+  const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
+  const trackingUrl = `${baseUrl}/track?token=${params.ticket.trackingToken}`;
 
   const html = ticketReplyTemplate({
     ticket: params.ticket,
@@ -234,7 +252,11 @@ export async function sendStatusChangeEmail(
   }
 ): Promise<EmailSendResult> {
   const resend = getResendClient(env);
-  const trackingUrl = `${env.BASE_URL}/track?token=${params.ticket.trackingToken}`;
+  if (!resend) {
+    return { success: false, error: "Email service not configured" };
+  }
+  const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
+  const trackingUrl = `${baseUrl}/track?token=${params.ticket.trackingToken}`;
 
   const html = statusChangeTemplate({
     ticket: params.ticket,
@@ -284,6 +306,9 @@ export async function sendAdminNotificationEmail(
   }
 ): Promise<EmailSendResult[]> {
   const resend = getResendClient(env);
+  if (!resend) {
+    return [{ success: false, error: "Email service not configured" }];
+  }
 
   const html = adminNotificationTemplate({
     ticket: params.ticket,
@@ -331,6 +356,9 @@ export async function sendAssignmentEmail(
   }
 ): Promise<EmailSendResult> {
   const resend = getResendClient(env);
+  if (!resend) {
+    return { success: false, error: "Email service not configured" };
+  }
 
   const html = assignmentTemplate({
     ticket: params.ticket,
@@ -588,14 +616,21 @@ export async function sendInvitationEmail(
     inviterName: string;
   }
 ): Promise<EmailSendResult> {
-  // Check if Resend is configured
-  if (!env.RESEND_API_KEY) {
+  // Check if Resend is configured (check both env and process.env)
+  const resend = getResendClient(env);
+  if (!resend) {
     console.warn("RESEND_API_KEY not configured, skipping invitation email");
     return { success: false, error: "Email service not configured" };
   }
 
-  const resend = getResendClient(env);
-  const acceptUrl = `${env.BASE_URL}/invite/${params.invitation.token}`;
+  const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
+  const fromEmail = env.SUPPORT_EMAIL_FROM || process.env.SUPPORT_EMAIL_FROM || "";
+  const acceptUrl = `${baseUrl}/invite/${params.invitation.token}`;
+
+  if (!fromEmail) {
+    console.error("SUPPORT_EMAIL_FROM not configured");
+    return { success: false, error: "From email not configured" };
+  }
 
   const html = invitationTemplate({
     invitation: params.invitation,
@@ -605,7 +640,7 @@ export async function sendInvitationEmail(
 
   try {
     const { data, error } = await resend.emails.send({
-      from: env.SUPPORT_EMAIL_FROM,
+      from: fromEmail,
       to: params.invitation.email,
       subject: "You've been invited to ServDesk",
       html,
@@ -634,14 +669,14 @@ export async function sendPasswordResetEmail(
     user: PasswordResetEmailData;
   }
 ): Promise<EmailSendResult> {
-  // Check if Resend is configured
-  if (!env.RESEND_API_KEY) {
+  const resend = getResendClient(env);
+  if (!resend) {
     console.warn("RESEND_API_KEY not configured, skipping password reset email");
     return { success: false, error: "Email service not configured" };
   }
 
-  const resend = getResendClient(env);
-  const resetUrl = `${env.BASE_URL}/reset-password?token=${params.user.token}`;
+  const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
+  const resetUrl = `${baseUrl}/reset-password?token=${params.user.token}`;
 
   const html = passwordResetTemplate({
     user: params.user,
@@ -680,14 +715,13 @@ export async function sendVerificationCodeEmail(
     code: string;
   }
 ): Promise<EmailSendResult> {
-  // Check if Resend is configured
-  if (!env.RESEND_API_KEY) {
+  const resend = getResendClient(env);
+  if (!resend) {
     console.warn("RESEND_API_KEY not configured, skipping verification code email");
     return { success: false, error: "Email service not configured" };
   }
 
-  const resend = getResendClient(env);
-
+  const fromEmail = env.SUPPORT_EMAIL_FROM || process.env.SUPPORT_EMAIL_FROM || "";
   const html = verificationCodeTemplate({
     email: params.email,
     code: params.code,
@@ -695,7 +729,7 @@ export async function sendVerificationCodeEmail(
 
   try {
     const { data, error } = await resend.emails.send({
-      from: env.SUPPORT_EMAIL_FROM,
+      from: fromEmail,
       to: params.email,
       subject: "Your ServDesk verification code",
       html,
@@ -725,14 +759,13 @@ export async function sendPasswordResetCodeEmail(
     code: string;
   }
 ): Promise<EmailSendResult> {
-  // Check if Resend is configured
-  if (!env.RESEND_API_KEY) {
+  const resend = getResendClient(env);
+  if (!resend) {
     console.warn("RESEND_API_KEY not configured, skipping password reset code email");
     return { success: false, error: "Email service not configured" };
   }
 
-  const resend = getResendClient(env);
-
+  const fromEmail = env.SUPPORT_EMAIL_FROM || process.env.SUPPORT_EMAIL_FROM || "";
   const html = passwordResetCodeTemplate({
     email: params.email,
     code: params.code,
@@ -740,7 +773,7 @@ export async function sendPasswordResetCodeEmail(
 
   try {
     const { data, error } = await resend.emails.send({
-      from: env.SUPPORT_EMAIL_FROM,
+      from: fromEmail,
       to: params.email,
       subject: "Reset your ServDesk password",
       html,
