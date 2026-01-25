@@ -12,7 +12,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "cf:build": "npx @cloudflare/next-on-pages",
-    "cf:dev": "wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat --port=8000 --remote",
+    "cf:dev": "wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat --port=8000",
     "deploy": "npm run cf:build && wrangler pages deploy .vercel/output/static",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply servdesk-db --local",

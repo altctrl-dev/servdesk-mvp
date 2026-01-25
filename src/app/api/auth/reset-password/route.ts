@@ -6,7 +6,7 @@
  * Security:
  * - Validates verification code matches and is not expired
  * - Max 5 verification attempts before lockout
- * - Updates user password hash directly in database
+ * - Updates user password hash in the account table using Better Auth's hashing
  * - Marks reset token as used
  * - Public endpoint (no authentication required)
  */
@@ -18,51 +18,13 @@ import { selfServiceResetPasswordSchema, safeValidate } from "@/lib/validations"
 import { logAudit } from "@/lib/audit";
 import { eq, and, isNull } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
+// Import Better Auth's password hashing to ensure compatibility
+import { hashPassword } from "better-auth/crypto";
 
 export const runtime = "edge";
 
 /** Maximum number of verification attempts before lockout */
 const MAX_VERIFICATION_ATTEMPTS = 5;
-
-/**
- * Hash a password using Web Crypto API (Scrypt-like using PBKDF2).
- * This matches Better Auth's password hashing format.
- */
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-
-  // Generate a random salt
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-
-  // Import the password as a key
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-
-  // Derive bits using PBKDF2
-  const derivedBits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    256
-  );
-
-  // Convert to base64
-  const hashArray = new Uint8Array(derivedBits);
-  const saltBase64 = btoa(String.fromCharCode(...salt));
-  const hashBase64 = btoa(String.fromCharCode(...hashArray));
-
-  // Return in format: salt:hash (base64 encoded)
-  return `${saltBase64}:${hashBase64}`;
-}
 
 // =============================================================================
 // POST: Reset Password with Verification Code
@@ -174,12 +136,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash the new password
+    // Hash the new password using Better Auth's scrypt hashing
     const passwordHash = await hashPassword(newPassword);
 
-    // Update the user's password in the Better Auth user table
+    // Update the password in the Better Auth account table (credential provider)
     await typedEnv.DB.prepare(
-      `UPDATE user SET password = ?1, updated_at = ?2 WHERE id = ?3`
+      `UPDATE account SET password = ?1, updatedAt = ?2 WHERE userId = ?3 AND providerId = 'credential'`
     ).bind(passwordHash, new Date().toISOString(), existingUser.id).run();
 
     // Update the userProfile's passwordChangedAt if profile exists
