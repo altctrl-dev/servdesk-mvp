@@ -46,7 +46,7 @@ export function LoginForm() {
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full border-white/10 bg-slate-950/60 text-slate-100 hover:bg-slate-900"
         onClick={handleMicrosoftLogin}
         disabled={isLoading}
       >

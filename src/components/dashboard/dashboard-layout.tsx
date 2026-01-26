@@ -32,6 +32,7 @@ import {
   FileText,
   Timer,
   TrendingUp,
+  LayoutList,
 } from "lucide-react";
 import type { UserRole } from "@/db/schema";
 import { hasAnyRole } from "@/lib/permissions";
@@ -70,6 +71,7 @@ function generateBreadcrumbs(pathname: string): { label: string; href?: string }
     my: "My Queue",
     team: "Team Queue",
     unassigned: "Unassigned",
+    all: "All",
     open: "Open",
     pending: "Pending",
     "on-hold": "On Hold",
@@ -151,6 +153,7 @@ function generateSidebarConfig(userRoles: UserRole[], pathname: string): Sidebar
 
   // Tickets section
   const ticketsItems = [
+    { title: "All", href: "/dashboard/tickets", icon: LayoutList, roles: ALL_ROLES },
     { title: "Open", href: "/dashboard/tickets/open", icon: Ticket, roles: ALL_ROLES },
     { title: "Pending", href: "/dashboard/tickets/pending", icon: Clock, roles: ALL_ROLES },
     { title: "On Hold", href: "/dashboard/tickets/on-hold", icon: Timer, roles: ALL_ROLES },
