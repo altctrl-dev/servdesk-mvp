@@ -89,6 +89,8 @@ export function createAuth(env: CloudflareEnv) {
               return false; // Cancel creation
             }
 
+            const nowSeconds = Math.floor(Date.now() / 1000);
+
             // Check for pending invitation
             const invitationResult = await env.DB.prepare(
               `SELECT id, role FROM invitations
@@ -96,7 +98,7 @@ export function createAuth(env: CloudflareEnv) {
                AND accepted_at IS NULL
                AND expires_at > ?2
                LIMIT 1`
-            ).bind(email, Date.now()).first<{ id: string; role: string }>();
+            ).bind(email, nowSeconds).first<{ id: string; role: string }>();
 
             if (!invitationResult) {
               // No valid invitation - reject sign-up by returning false
@@ -113,6 +115,8 @@ export function createAuth(env: CloudflareEnv) {
               const email = user.email?.toLowerCase();
               if (!email) return;
 
+              const nowSeconds = Math.floor(Date.now() / 1000);
+
               // Get the invitation (we know it exists from the before hook)
               const invitationResult = await env.DB.prepare(
                 `SELECT id, role FROM invitations
@@ -120,7 +124,7 @@ export function createAuth(env: CloudflareEnv) {
                  AND accepted_at IS NULL
                  AND expires_at > ?2
                  LIMIT 1`
-              ).bind(email, Date.now()).first<{ id: string; role: string }>();
+              ).bind(email, nowSeconds).first<{ id: string; role: string }>();
 
               if (invitationResult) {
                 const normalizedRole =
@@ -138,7 +142,7 @@ export function createAuth(env: CloudflareEnv) {
                 // Mark invitation as accepted
                 await env.DB.prepare(
                   `UPDATE invitations SET accepted_at = ?1 WHERE id = ?2`
-                ).bind(Date.now(), invitationResult.id).run();
+                ).bind(nowSeconds, invitationResult.id).run();
 
                 // Create user profile with the invited role
                 await env.DB.prepare(
