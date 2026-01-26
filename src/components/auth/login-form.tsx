@@ -70,6 +70,18 @@ export function LoginForm() {
             return;
           }
 
+          // Check for transient errors (503, service unavailable, cold start)
+          const isTransientError =
+            result.error.status === 503 ||
+            result.error.message?.toLowerCase().includes("service unavailable") ||
+            result.error.message?.toLowerCase().includes("unavailable");
+
+          if (isTransientError && attempt < maxRetries) {
+            console.log(`Transient error on attempt ${attempt}, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            continue;
+          }
+
           // Handle other errors (don't retry auth errors)
           setError(result.error.message || "Invalid email or password");
           setIsLoading(false);
