@@ -2,11 +2,15 @@
  * Login Page
  *
  * Provides Microsoft OAuth authentication.
- * Redirects to dashboard on successful login.
+ * Redirects to dashboard if already authenticated.
  */
 
 import { Suspense } from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+
+export const runtime = "edge";
 import {
   Card,
   CardContent,
@@ -25,7 +29,18 @@ function LoginFormFallback() {
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Check if user has a session cookie - redirect to dashboard
+  const cookieStore = await cookies();
+  const hasSession =
+    cookieStore.get("__Secure-servdesk.session_token") ||
+    cookieStore.get("servdesk.session_token") ||
+    cookieStore.get("better-auth.session_token");
+
+  if (hasSession) {
+    redirect("/dashboard");
+  }
+
   return (
     <Card>
       <CardHeader className="space-y-1">
