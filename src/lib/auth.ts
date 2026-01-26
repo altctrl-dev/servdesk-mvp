@@ -65,6 +65,12 @@ export function createAuth(env: CloudflareEnv) {
       useSecureCookies: env.ENVIRONMENT === "production",
     },
 
+    // Account linking - allow linking OAuth to existing accounts with same email
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["microsoft"],
+    },
+
     // Rate limiting configuration
     rateLimit: {
       enabled: true,
