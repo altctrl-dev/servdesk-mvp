@@ -78,18 +78,42 @@ export function createAuth(env: CloudflareEnv) {
       max: 20, // 20 requests per window (increased for OAuth flow)
     },
 
-    // Database hooks for user profile creation
+    // Database hooks for invitation-only sign-up
     databaseHooks: {
       user: {
         create: {
+          // Before hook: Validate invitation exists before allowing sign-up
+          before: async (user) => {
+            const email = user.email?.toLowerCase();
+            if (!email) {
+              return false; // Cancel creation
+            }
+
+            // Check for pending invitation
+            const invitationResult = await env.DB.prepare(
+              `SELECT id, role FROM invitations
+               WHERE email = ?1
+               AND accepted_at IS NULL
+               AND expires_at > ?2
+               LIMIT 1`
+            ).bind(email, Date.now() / 1000).first<{ id: string; role: string }>();
+
+            if (!invitationResult) {
+              // No valid invitation - reject sign-up by returning false
+              console.log(`Rejected sign-up attempt for ${email} - no valid invitation`);
+              return false;
+            }
+
+            // Invitation exists, allow creation
+            return { data: user };
+          },
+          // After hook: Create user profile and mark invitation as accepted
           after: async (user) => {
-            // Create user profile when a new user signs in via Microsoft
-            // Check if there's a pending invitation for this email
             try {
               const email = user.email?.toLowerCase();
               if (!email) return;
 
-              // Check for pending invitation
+              // Get the invitation (we know it exists from the before hook)
               const invitationResult = await env.DB.prepare(
                 `SELECT id, role FROM invitations
                  WHERE email = ?1
@@ -98,28 +122,22 @@ export function createAuth(env: CloudflareEnv) {
                  LIMIT 1`
               ).bind(email, Date.now() / 1000).first<{ id: string; role: string }>();
 
-              let role = "VIEW_ONLY"; // Default role for uninvited users
-
               if (invitationResult) {
-                // Use the invited role
-                role = invitationResult.role;
-
                 // Mark invitation as accepted
                 await env.DB.prepare(
                   `UPDATE invitations SET accepted_at = ?1 WHERE id = ?2`
                 ).bind(Date.now() / 1000, invitationResult.id).run();
+
+                // Create user profile with the invited role
+                await env.DB.prepare(
+                  `INSERT INTO user_profiles (user_id, role, is_active, failed_login_attempts, created_at, updated_at)
+                   VALUES (?1, ?2, 1, 0, unixepoch(), unixepoch())`
+                ).bind(user.id, invitationResult.role).run();
+
+                console.log(`Created user profile for ${email} with role ${invitationResult.role}`);
               }
-
-              // Create user profile
-              await env.DB.prepare(
-                `INSERT INTO user_profiles (user_id, role, is_active, failed_login_attempts, created_at, updated_at)
-                 VALUES (?1, ?2, 1, 0, unixepoch(), unixepoch())`
-              ).bind(user.id, role).run();
-
-              console.log(`Created user profile for ${email} with role ${role}`);
             } catch (error) {
               console.error("Error creating user profile:", error);
-              // Don't throw - let the user sign in, profile can be created manually
             }
           },
         },
