@@ -31,6 +31,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -154,18 +162,58 @@ function CollapsibleSection({
     pathname.startsWith(item.href)
   );
 
+  // When collapsed, show only the section icon with a dropdown menu for items
   if (isCollapsed) {
     return (
-      <div className="space-y-1">
-        {section.items.map((item) => (
-          <NavItemLink
-            key={item.href}
-            item={item}
-            isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-            isCollapsed={isCollapsed}
-          />
-        ))}
-      </div>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "flex w-full items-center justify-center rounded-lg p-2 text-sm transition-colors",
+                  hasActiveItem
+                    ? "bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-foreground))]"
+                    : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-hover))]"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+              </button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>
+            {section.title}
+          </TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent side="right" align="start" className="w-48">
+          <DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {section.items.map((item) => {
+            const ItemIcon = item.icon;
+            const isItemActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <DropdownMenuItem key={item.href} asChild>
+                <Link
+                  href={item.disabled ? "#" : item.href}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center gap-2",
+                    isItemActive && "bg-accent",
+                    item.disabled && "pointer-events-none opacity-50"
+                  )}
+                >
+                  <ItemIcon className="h-4 w-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </span>
+                  )}
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 

@@ -165,13 +165,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Hash the password using Better Auth's scrypt hashing
     const passwordHash = await hashPassword(password);
 
-    // Debug: Log hash info (remove in production)
-    console.log("Password hash generated:", {
-      length: passwordHash.length,
-      hasColon: passwordHash.includes(":"),
-      prefix: passwordHash.substring(0, 40)
-    });
-
     // Generate a new user ID
     const newUserId = generateId();
     const now = new Date().toISOString();
@@ -187,12 +180,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await typedEnv.DB.prepare(
         `INSERT INTO account (id, accountId, providerId, userId, password, createdAt, updatedAt) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
       ).bind(accountId, newUserId, "credential", newUserId, passwordHash, now, now).run();
-
-      // Debug: Verify what was saved
-      const savedAccount = await typedEnv.DB.prepare(
-        `SELECT LENGTH(password) as pwd_len, SUBSTR(password, 1, 40) as pwd_prefix FROM account WHERE id = ?1`
-      ).bind(accountId).first();
-      console.log("Account saved verification:", savedAccount);
     } catch (createError) {
       console.error("Failed to create user/account:", createError);
       return NextResponse.json(
