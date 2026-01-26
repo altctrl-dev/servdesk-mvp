@@ -159,6 +159,7 @@ async function TicketsContent({
           defaultStatus={searchParams.status || "all"}
           defaultPriority={searchParams.priority || "all"}
           defaultSearch={searchParams.search || ""}
+          hideStatusFilter={true}
           canShareViews={canShareViews}
         />
 
@@ -184,7 +185,7 @@ function TicketsSkeleton() {
       </div>
 
       <div className="space-y-4">
-        <TicketFilters />
+        <TicketFilters hideStatusFilter={true} />
         <TicketTableSkeleton />
       </div>
     </div>

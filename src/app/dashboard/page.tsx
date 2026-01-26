@@ -218,6 +218,7 @@ async function DashboardContent({
           defaultStatus={searchParams.status || "all"}
           defaultPriority={searchParams.priority || "all"}
           defaultSearch={searchParams.search || ""}
+          hideStatusFilter={true}
           canShareViews={canShareViews}
         />
 
@@ -243,7 +244,7 @@ function DashboardSkeleton() {
       <TicketStatsSkeleton />
 
       <div className="space-y-4">
-        <TicketFilters />
+        <TicketFilters hideStatusFilter={true} />
         <TicketTableSkeleton />
       </div>
     </div>

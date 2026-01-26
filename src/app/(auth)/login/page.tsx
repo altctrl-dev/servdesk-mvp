@@ -60,12 +60,6 @@ export default async function LoginPage() {
             </div>
           </div>
         </div>
-        <Badge
-          variant="outline"
-          className="w-fit border-white/20 bg-white/5 text-slate-200"
-        >
-          Servsys customers only
-        </Badge>
       </header>
 
       <main className="mt-10 grid flex-1 gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
