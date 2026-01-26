@@ -47,11 +47,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  KeyRound,
   Clock,
   Mail,
   Trash2,
-  Hash,
 } from "lucide-react";
 import type { UserRole } from "@/db/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -157,42 +155,6 @@ export function UserTable({
     }
   }
 
-  /** Resend just the verification code */
-  async function handleResendVerificationCode(invitation: PendingInvitation) {
-    setActionLoading(invitation.id);
-    try {
-      const response = await fetch(`/api/invitations/${invitation.token}/send-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const result: ApiResponse = await response.json();
-
-      if (!response.ok) {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to send verification code",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: `Verification code sent to ${invitation.email}`,
-      });
-    } catch (error) {
-      console.error("Error sending verification code:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
   /** Cancel invitation */
   async function handleCancelInvitation(invitation: PendingInvitation) {
     setActionLoading(invitation.id);
@@ -227,42 +189,6 @@ export function UserTable({
     } finally {
       setActionLoading(null);
       setCancelInviteDialog(null);
-    }
-  }
-
-  /** Trigger password reset */
-  async function handleResetPassword(user: User) {
-    setActionLoading(user.id);
-    try {
-      const response = await fetch(`/api/users/${user.id}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const result: ApiResponse = await response.json();
-
-      if (!response.ok) {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to send password reset",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: `Password reset email sent to ${user.email}`,
-      });
-    } catch (error) {
-      console.error("Error sending password reset:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(null);
     }
   }
 
@@ -505,16 +431,6 @@ export function UserTable({
                           </div>
                           <DropdownMenuSeparator className="sm:hidden" />
 
-                          {/* Reset password */}
-                          {!isSelf && user.isActive && (
-                            <DropdownMenuItem
-                              onClick={() => handleResetPassword(user)}
-                            >
-                              <KeyRound className="mr-2 h-4 w-4" />
-                              Reset Password
-                            </DropdownMenuItem>
-                          )}
-
                           {/* Toggle active status */}
                           {!isSelf && (
                             <DropdownMenuItem
@@ -620,12 +536,6 @@ export function UserTable({
                           >
                             <Mail className="mr-2 h-4 w-4" />
                             Resend Invitation Email
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleResendVerificationCode(invitation)}
-                          >
-                            <Hash className="mr-2 h-4 w-4" />
-                            Resend Verification Code
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

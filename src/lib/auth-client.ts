@@ -32,10 +32,14 @@ export const {
  * @param callbackURL - URL to redirect after successful login
  * @returns Promise that redirects to Microsoft login
  */
-export async function signInWithMicrosoft(callbackURL: string = "/dashboard") {
+export async function signInWithMicrosoft(
+  callbackURL: string = "/dashboard",
+  errorCallbackURL: string = "/unauthorized"
+) {
   const result = await signIn.social({
     provider: "microsoft",
     callbackURL,
+    errorCallbackURL,
   });
   return result;
 }

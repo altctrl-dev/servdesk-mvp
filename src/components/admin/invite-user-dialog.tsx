@@ -133,7 +133,7 @@ export function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
           <DialogHeader>
             <DialogTitle>Invite New User</DialogTitle>
             <DialogDescription>
-              Send an invitation email to add a new user to the system.
+              Send an invitation email so they can sign in with Microsoft.
             </DialogDescription>
           </DialogHeader>
 
@@ -182,7 +182,7 @@ export function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
                 <p className="text-sm text-destructive">{errors.role.message}</p>
               )}
               <p className="text-sm text-muted-foreground">
-                The user will have this role when they accept the invitation.
+                The user will have this role after their first Microsoft sign-in.
               </p>
             </div>
           </div>

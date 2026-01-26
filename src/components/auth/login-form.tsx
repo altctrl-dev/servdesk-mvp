@@ -25,7 +25,7 @@ export function LoginForm() {
 
     try {
       const redirectTo = searchParams.get("redirect") || "/dashboard";
-      await signInWithMicrosoft(redirectTo);
+      await signInWithMicrosoft(redirectTo, "/unauthorized");
     } catch (err) {
       console.error("Login error:", err);
       setError("Failed to connect to Microsoft. Please try again.");

@@ -96,7 +96,7 @@ export function createAuth(env: CloudflareEnv) {
                AND accepted_at IS NULL
                AND expires_at > ?2
                LIMIT 1`
-            ).bind(email, Date.now() / 1000).first<{ id: string; role: string }>();
+            ).bind(email, Date.now()).first<{ id: string; role: string }>();
 
             if (!invitationResult) {
               // No valid invitation - reject sign-up by returning false
@@ -120,21 +120,39 @@ export function createAuth(env: CloudflareEnv) {
                  AND accepted_at IS NULL
                  AND expires_at > ?2
                  LIMIT 1`
-              ).bind(email, Date.now() / 1000).first<{ id: string; role: string }>();
+              ).bind(email, Date.now()).first<{ id: string; role: string }>();
 
               if (invitationResult) {
+                const normalizedRole =
+                  invitationResult.role === "VIEW_ONLY"
+                    ? "AGENT"
+                    : invitationResult.role;
+                const roleIdMap: Record<string, string> = {
+                  SUPER_ADMIN: "role_super_admin",
+                  ADMIN: "role_admin",
+                  SUPERVISOR: "role_supervisor",
+                  AGENT: "role_agent",
+                };
+                const roleId = roleIdMap[normalizedRole] || "role_agent";
+
                 // Mark invitation as accepted
                 await env.DB.prepare(
                   `UPDATE invitations SET accepted_at = ?1 WHERE id = ?2`
-                ).bind(Date.now() / 1000, invitationResult.id).run();
+                ).bind(Date.now(), invitationResult.id).run();
 
                 // Create user profile with the invited role
                 await env.DB.prepare(
                   `INSERT INTO user_profiles (user_id, role, is_active, failed_login_attempts, created_at, updated_at)
                    VALUES (?1, ?2, 1, 0, unixepoch(), unixepoch())`
-                ).bind(user.id, invitationResult.role).run();
+                ).bind(user.id, normalizedRole).run();
 
-                console.log(`Created user profile for ${email} with role ${invitationResult.role}`);
+                // Create user_roles entry for multi-role RBAC
+                await env.DB.prepare(
+                  `INSERT OR IGNORE INTO user_roles (id, user_id, role_id, assigned_at)
+                   VALUES (lower(hex(randomblob(12))), ?1, ?2, unixepoch())`
+                ).bind(user.id, roleId).run();
+
+                console.log(`Created user profile for ${email} with role ${normalizedRole}`);
               }
             } catch (error) {
               console.error("Error creating user profile:", error);

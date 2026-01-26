@@ -445,7 +445,9 @@ export function assignmentTemplate(params: {
 const roleDisplayNames: Record<string, string> = {
   SUPER_ADMIN: "Super Administrator",
   ADMIN: "Administrator",
-  AGENT: "View Only",
+  SUPERVISOR: "Supervisor",
+  AGENT: "Agent",
+  VIEW_ONLY: "Agent",
 };
 
 /**
@@ -478,10 +480,10 @@ export function invitationTemplate(params: {
       </div>
     </div>
 
-    <p>Click the button below to set up your account:</p>
+    <p>Click the button below to sign in with your Microsoft account:</p>
 
     <p style="text-align: center;">
-      <a href="${escapeHtml(acceptUrl)}" style="${baseStyles.button}">Accept Invitation</a>
+      <a href="${escapeHtml(acceptUrl)}" style="${baseStyles.button}">Sign in with Microsoft</a>
     </p>
 
     <p style="${baseStyles.muted}">This invitation will expire on ${expiryDate}.</p>

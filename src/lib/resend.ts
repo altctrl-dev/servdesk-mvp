@@ -625,7 +625,7 @@ export async function sendInvitationEmail(
 
   const baseUrl = env.BASE_URL || process.env.BASE_URL || "";
   const fromEmail = env.SUPPORT_EMAIL_FROM || process.env.SUPPORT_EMAIL_FROM || "";
-  const acceptUrl = `${baseUrl}/invite/${params.invitation.token}`;
+  const acceptUrl = `${baseUrl}/login`;
 
   if (!fromEmail) {
     console.error("SUPPORT_EMAIL_FROM not configured");

@@ -12,14 +12,11 @@ import type { NextRequest } from "next/server";
 const PUBLIC_ROUTES = [
   "/",
   "/login",
-  "/login/mfa",
-  "/forgot-password",
   "/track",
-  "/invite",
+  "/unauthorized",
   "/api/auth",
   "/api/health",
   "/api/inbound",
-  "/api/invitations",
   "/api/tickets/track",
 ];
 

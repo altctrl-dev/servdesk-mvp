@@ -1,15 +1,15 @@
 /**
  * Resend Invitation Email API Route
  *
- * POST: Resend the full invitation email with the acceptance link (SUPER_ADMIN only)
+ * POST: Resend invitation email with Microsoft login link (SUPER_ADMIN only)
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCloudflareContext } from "@/lib/cf-context";
 import { getDb, invitations } from "@/db";
 import { requireRole } from "@/lib/rbac";
 import { sendInvitationEmail } from "@/lib/resend";
-import { eq, and, gt, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 
 export const runtime = "edge";
@@ -22,13 +22,12 @@ interface RouteParams {
 // POST: Resend Invitation Email (SUPER_ADMIN only)
 // =============================================================================
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(_request: Request, { params }: RouteParams) {
   try {
     // Require SUPER_ADMIN role
     const session = await requireRole(["SUPER_ADMIN"]);
 
     const { token } = await params;
-
     if (!token) {
       return NextResponse.json(
         { error: "Token is required" },
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Get Cloudflare context
+    // Get Cloudflare context and database
     const { env } = await getCloudflareContext();
     const typedEnv = env as CloudflareEnv;
     const db = getDb(typedEnv.DB);
@@ -45,26 +44,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const [invitation] = await db
       .select()
       .from(invitations)
-      .where(
-        and(
-          eq(invitations.token, token),
-          gt(invitations.expiresAt, new Date()),
-          isNull(invitations.acceptedAt)
-        )
-      )
+      .where(eq(invitations.token, token))
       .limit(1);
 
     if (!invitation) {
       return NextResponse.json(
-        { error: "Invitation not found or expired" },
+        { error: "Invitation not found" },
         { status: 404 }
       );
     }
 
-    // Get inviter name from session
-    const inviterName = session.user.name || session.user.email;
+    if (invitation.acceptedAt) {
+      return NextResponse.json(
+        { error: "This invitation has already been accepted" },
+        { status: 410 }
+      );
+    }
 
-    // Send the invitation email
+    if (invitation.expiresAt <= new Date()) {
+      return NextResponse.json(
+        { error: "This invitation has expired" },
+        { status: 410 }
+      );
+    }
+
+    // Resend invitation email
     const emailResult = await sendInvitationEmail(typedEnv, {
       invitation: {
         email: invitation.email,
@@ -72,13 +76,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         token: invitation.token,
         expiresAt: invitation.expiresAt,
       },
-      inviterName,
+      inviterName: session.user.name || session.user.email,
     });
 
     if (!emailResult.success) {
-      console.error("Failed to resend invitation email:", emailResult.error);
       return NextResponse.json(
-        { error: "Failed to send invitation email" },
+        { error: emailResult.error || "Failed to resend invitation email" },
         { status: 500 }
       );
     }
