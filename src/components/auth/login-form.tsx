@@ -51,8 +51,16 @@ export function LoginForm() {
     setError(null);
     setIsLoading(true);
 
-    // Retry logic for transient failures (e.g., D1 cold start)
-    const maxRetries = 2;
+    // Pre-warm the worker and D1 connection to reduce cold start issues
+    try {
+      await fetch("/api/health?warm=true", { method: "GET" });
+    } catch {
+      // Ignore warm-up errors, continue with login
+    }
+
+    // Retry logic with exponential backoff for D1 cold start
+    const maxRetries = 4;
+    const baseDelay = 1000; // Start with 1 second
     let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -77,8 +85,9 @@ export function LoginForm() {
             result.error.message?.toLowerCase().includes("unavailable");
 
           if (isTransientError && attempt < maxRetries) {
-            console.log(`Transient error on attempt ${attempt}, retrying...`);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential: 1s, 2s, 4s
+            console.log(`Transient error on attempt ${attempt}, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
 
@@ -97,9 +106,10 @@ export function LoginForm() {
         lastError = err;
         console.error(`Login attempt ${attempt} failed:`, err);
 
-        // If not the last attempt, wait briefly and retry
+        // If not the last attempt, wait with exponential backoff
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
