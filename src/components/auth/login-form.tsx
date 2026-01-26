@@ -51,35 +51,51 @@ export function LoginForm() {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const result = await signInWithEmail(data.email, data.password);
+    // Retry logic for transient failures (e.g., D1 cold start)
+    const maxRetries = 2;
+    let lastError: unknown = null;
 
-      if (result.error) {
-        // Check if MFA is required
-        if (
-          result.error.message?.includes("two-factor") ||
-          result.error.code === "TWO_FACTOR_REQUIRED"
-        ) {
-          // Redirect to MFA page
-          router.push("/login/mfa");
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await signInWithEmail(data.email, data.password);
+
+        if (result.error) {
+          // Check if MFA is required
+          if (
+            result.error.message?.includes("two-factor") ||
+            result.error.code === "TWO_FACTOR_REQUIRED"
+          ) {
+            // Redirect to MFA page
+            router.push("/login/mfa");
+            return;
+          }
+
+          // Handle other errors (don't retry auth errors)
+          setError(result.error.message || "Invalid email or password");
+          setIsLoading(false);
           return;
         }
 
-        // Handle other errors
-        setError(result.error.message || "Invalid email or password");
+        // Success - redirect to the original destination or dashboard
+        const redirectTo = searchParams.get("redirect") || "/dashboard";
+        router.push(redirectTo);
+        router.refresh();
         return;
-      }
+      } catch (err) {
+        lastError = err;
+        console.error(`Login attempt ${attempt} failed:`, err);
 
-      // Success - redirect to the original destination or dashboard
-      const redirectTo = searchParams.get("redirect") || "/dashboard";
-      router.push(redirectTo);
-      router.refresh();
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+        // If not the last attempt, wait briefly and retry
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
     }
+
+    // All retries failed
+    console.error("Login failed after all retries:", lastError);
+    setError("An unexpected error occurred. Please try again.");
+    setIsLoading(false);
   };
 
   return (
