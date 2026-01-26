@@ -163,17 +163,27 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Create user in Better Auth
-    const signUpResult = await auth.api.signUpEmail({
-      body: {
-        email: invitation.email,
-        password,
-        name,
-      },
-    });
+    let signUpResult;
+    try {
+      signUpResult = await auth.api.signUpEmail({
+        body: {
+          email: invitation.email,
+          password,
+          name,
+        },
+      });
+    } catch (signUpError) {
+      console.error("Better Auth signUpEmail failed:", signUpError);
+      return NextResponse.json(
+        { error: `Failed to create user account: ${signUpError instanceof Error ? signUpError.message : 'Unknown error'}` },
+        { status: 500 }
+      );
+    }
 
     if (!signUpResult || !signUpResult.user) {
+      console.error("signUpEmail returned no user:", signUpResult);
       return NextResponse.json(
-        { error: "Failed to create user account" },
+        { error: "Failed to create user account - no user returned" },
         { status: 500 }
       );
     }
@@ -181,11 +191,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const newUserId = signUpResult.user.id;
 
     // Create user profile with invited role
-    await db.insert(userProfiles).values({
-      userId: newUserId,
-      role: invitation.role,
-      isActive: true,
-    });
+    try {
+      await db.insert(userProfiles).values({
+        userId: newUserId,
+        role: invitation.role,
+        isActive: true,
+      });
+    } catch (profileError) {
+      console.error("Failed to create user profile:", profileError);
+      return NextResponse.json(
+        { error: `Failed to create user profile: ${profileError instanceof Error ? profileError.message : 'Unknown error'}` },
+        { status: 500 }
+      );
+    }
 
     // Mark invitation as accepted and clear verification code
     await db
