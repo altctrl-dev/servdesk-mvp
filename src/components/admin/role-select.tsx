@@ -11,7 +11,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Shield, ShieldCheck, Users, Headphones } from "lucide-react";
@@ -64,10 +63,18 @@ export function RoleSelect({
   disabled,
   className,
 }: RoleSelectProps) {
+  // Find the selected role to display icon + label only in trigger
+  const selectedRole = ROLE_OPTIONS.find((r) => r.value === value);
+  const Icon = selectedRole?.icon;
+
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className={className}>
-        <SelectValue placeholder="Select role" />
+        {/* Custom display showing only icon + label, not the full description */}
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="h-4 w-4" />}
+          <span>{selectedRole?.label || value}</span>
+        </div>
       </SelectTrigger>
       <SelectContent>
         {ROLE_OPTIONS.map((option) => (

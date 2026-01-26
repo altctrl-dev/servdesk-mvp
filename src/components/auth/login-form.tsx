@@ -51,73 +51,45 @@ export function LoginForm() {
     setError(null);
     setIsLoading(true);
 
-    // Pre-warm the worker and D1 connection to reduce cold start issues
     try {
-      await fetch("/api/health?warm=true", { method: "GET" });
-    } catch {
-      // Ignore warm-up errors, continue with login
-    }
+      const result = await signInWithEmail(data.email, data.password);
 
-    // Retry logic with exponential backoff for D1 cold start
-    const maxRetries = 4;
-    const baseDelay = 1000; // Start with 1 second
-    let lastError: unknown = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await signInWithEmail(data.email, data.password);
-
-        if (result.error) {
-          // Check if MFA is required
-          if (
-            result.error.message?.includes("two-factor") ||
-            result.error.code === "TWO_FACTOR_REQUIRED"
-          ) {
-            // Redirect to MFA page
-            router.push("/login/mfa");
-            return;
-          }
-
-          // Check for transient errors (503, service unavailable, cold start)
-          const isTransientError =
-            result.error.status === 503 ||
-            result.error.message?.toLowerCase().includes("service unavailable") ||
-            result.error.message?.toLowerCase().includes("unavailable");
-
-          if (isTransientError && attempt < maxRetries) {
-            const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential: 1s, 2s, 4s
-            console.log(`Transient error on attempt ${attempt}, retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-
-          // Handle other errors (don't retry auth errors)
-          setError(result.error.message || "Invalid email or password");
-          setIsLoading(false);
+      if (result.error) {
+        // Check if MFA is required
+        if (
+          result.error.message?.includes("two-factor") ||
+          result.error.code === "TWO_FACTOR_REQUIRED"
+        ) {
+          router.push("/login/mfa");
           return;
         }
 
-        // Success - redirect to the original destination or dashboard
-        const redirectTo = searchParams.get("redirect") || "/dashboard";
-        router.push(redirectTo);
-        router.refresh();
-        return;
-      } catch (err) {
-        lastError = err;
-        console.error(`Login attempt ${attempt} failed:`, err);
+        // Check for cold start / service unavailable errors
+        const isServiceError =
+          result.error.status === 503 ||
+          result.error.status === 429 ||
+          result.error.message?.toLowerCase().includes("service unavailable") ||
+          result.error.message?.toLowerCase().includes("too many requests");
 
-        // If not the last attempt, wait with exponential backoff
-        if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt - 1);
-          await new Promise(resolve => setTimeout(resolve, delay));
+        if (isServiceError) {
+          setError("Server is warming up. Please wait a moment and try again.");
+          return;
         }
-      }
-    }
 
-    // All retries failed
-    console.error("Login failed after all retries:", lastError);
-    setError("An unexpected error occurred. Please try again.");
-    setIsLoading(false);
+        setError(result.error.message || "Invalid email or password");
+        return;
+      }
+
+      // Success - redirect to the original destination or dashboard
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      router.push(redirectTo);
+      router.refresh();
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
