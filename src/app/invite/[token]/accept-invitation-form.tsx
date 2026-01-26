@@ -6,8 +6,9 @@
  * Client-side form for accepting a user invitation with email verification.
  * Flow:
  * 1. User sees invitation details + "Send verification code" button
- * 2. User receives code via email, enters it with name/password
- * 3. Account is created after successful verification
+ * 2. User enters code received via email
+ * 3. After verification, user is redirected to Microsoft sign-in
+ * 4. Microsoft login creates account with pre-assigned role
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -23,35 +24,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, AlertCircle, CheckCircle, Mail, Shield, KeyRound, RefreshCw } from "lucide-react";
+import { signInWithMicrosoft } from "@/lib/auth-client";
 
 /** Role display names */
 const roleDisplayNames: Record<string, string> = {
   SUPER_ADMIN: "Super Administrator",
   ADMIN: "Administrator",
-  AGENT: "View Only",
+  AGENT: "Agent",
+  VIEW_ONLY: "View Only",
 };
 
 /** Cooldown time between code resend requests (in seconds) */
 const RESEND_COOLDOWN_SECONDS = 60;
 
-/** Validation schema for accept invitation form (Step 2) */
-const acceptInvitationFormSchema = z.object({
+/** Validation schema for verification code */
+const verificationSchema = z.object({
   verificationCode: z
     .string()
     .length(6, "Code must be 6 digits")
     .regex(/^\d{6}$/, "Code must be 6 digits"),
-  name: z.string().min(1, "Name is required").max(100, "Name too long"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(100, "Password too long"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
 });
 
-type AcceptInvitationFormData = z.infer<typeof acceptInvitationFormSchema>;
+type VerificationFormData = z.infer<typeof verificationSchema>;
 
 interface InvitationDetails {
   email: string;
@@ -70,14 +64,13 @@ interface ApiResponse {
   error?: string;
   message?: string;
   invitation?: InvitationDetails;
-  user?: { id: string; email: string; name: string; role: string };
 }
 
 interface AcceptInvitationFormProps {
   token: string;
 }
 
-type FormStep = "initial" | "verification";
+type FormStep = "initial" | "verification" | "success";
 
 export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
   const router = useRouter();
@@ -100,20 +93,16 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
   // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setFocus,
-  } = useForm<AcceptInvitationFormData>({
-    resolver: zodResolver(acceptInvitationFormSchema),
+  } = useForm<VerificationFormData>({
+    resolver: zodResolver(verificationSchema),
     defaultValues: {
       verificationCode: "",
-      name: "",
-      password: "",
-      confirmPassword: "",
     },
   });
 
@@ -194,40 +183,45 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
     }
   }, [token, setFocus]);
 
-  // Submit form to create account
-  const onSubmit = async (data: AcceptInvitationFormData) => {
+  // Verify code and redirect to Microsoft sign-in
+  const onSubmit = async (data: VerificationFormData) => {
     setSubmitError(null);
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/invitations/${token}/accept`, {
+      // Verify the code
+      const response = await fetch(`/api/invitations/${token}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           verificationCode: data.verificationCode,
-          name: data.name,
-          password: data.password,
         }),
       });
 
       const result: ApiResponse = await response.json();
 
       if (!response.ok) {
-        setSubmitError(result.error || "Failed to create account");
+        setSubmitError(result.error || "Invalid verification code");
+        setIsSubmitting(false);
         return;
       }
 
-      // Success
-      setSuccess(true);
+      // Success - show success message then redirect to Microsoft sign-in
+      setStep("success");
 
-      // Redirect to login after short delay
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+      // Redirect to Microsoft sign-in after short delay
+      setTimeout(async () => {
+        try {
+          await signInWithMicrosoft("/dashboard");
+        } catch (err) {
+          console.error("Error redirecting to Microsoft:", err);
+          // Fallback - redirect to login page
+          router.push("/login");
+        }
+      }, 1500);
     } catch (err) {
-      console.error("Error accepting invitation:", err);
+      console.error("Error verifying code:", err);
       setSubmitError("An unexpected error occurred. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -241,9 +235,7 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
           <Skeleton className="h-4 w-64 mt-2" />
         </CardHeader>
         <CardContent className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-20 w-full" />
           <Skeleton className="h-10 w-full" />
         </CardContent>
       </Card>
@@ -272,21 +264,21 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
     );
   }
 
-  // Success state
-  if (success) {
+  // Success state - redirecting to Microsoft
+  if (step === "success") {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-green-600">
             <CheckCircle className="h-5 w-5" />
-            Account Created
+            Email Verified
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Alert className="border-green-200 bg-green-50 text-green-800">
+          <Alert className="border-green-200 bg-green-50 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              Your account has been created successfully. Redirecting to login...
+              Redirecting to Microsoft sign-in to complete your account setup...
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -301,7 +293,7 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
         <CardHeader>
           <CardTitle>Accept Invitation</CardTitle>
           <CardDescription>
-            Verify your email to complete account setup
+            Verify your email to join ServDesk
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -322,7 +314,8 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
 
           {/* Info text */}
           <p className="text-sm text-muted-foreground mb-4">
-            To verify that you own this email address, we will send a 6-digit verification code to <strong>{invitation?.email}</strong>.
+            We&apos;ll send a 6-digit verification code to <strong>{invitation?.email}</strong>.
+            After verifying, you&apos;ll sign in with your Microsoft account.
           </p>
 
           {/* Error display */}
@@ -356,13 +349,13 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
     );
   }
 
-  // Step 2: Verification - Code input + account details form
+  // Step 2: Verification - Code input
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Complete Your Account</CardTitle>
+        <CardTitle>Enter Verification Code</CardTitle>
         <CardDescription>
-          Enter the verification code sent to {invitation?.email}
+          Enter the code sent to {invitation?.email}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -389,16 +382,14 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
           {/* Verification code field */}
           <div className="space-y-2">
             <Label htmlFor="verificationCode">Verification Code</Label>
-            <div className="flex gap-2">
-              <Input
-                id="verificationCode"
-                placeholder="000000"
-                maxLength={6}
-                className="font-mono text-center text-lg tracking-widest"
-                disabled={isSubmitting}
-                {...register("verificationCode")}
-              />
-            </div>
+            <Input
+              id="verificationCode"
+              placeholder="000000"
+              maxLength={6}
+              className="font-mono text-center text-lg tracking-widest"
+              disabled={isSubmitting}
+              {...register("verificationCode")}
+            />
             {errors.verificationCode && (
               <p className="text-sm text-destructive">{errors.verificationCode.message}</p>
             )}
@@ -430,61 +421,28 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
             </div>
           </div>
 
-          {/* Name field */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              placeholder="John Doe"
-              disabled={isSubmitting}
-              {...register("name")}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Password field */}
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Min. 8 characters"
-              disabled={isSubmitting}
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Confirm password field */}
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Re-enter password"
-              disabled={isSubmitting}
-              {...register("confirmPassword")}
-            />
-            {errors.confirmPassword && (
-              <p className="text-sm text-destructive">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-
           {/* Submit button */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Account...
+                Verifying...
               </>
             ) : (
-              "Create Account"
+              <>
+                <svg
+                  className="mr-2 h-4 w-4"
+                  viewBox="0 0 21 21"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                  <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                </svg>
+                Verify & Continue with Microsoft
+              </>
             )}
           </Button>
         </form>

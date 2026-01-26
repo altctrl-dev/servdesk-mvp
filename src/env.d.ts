@@ -37,9 +37,10 @@ export type CloudflareEnv = {
   // Cloudflare Email Worker secret
   INBOUND_API_SECRET: string;
 
-  // OAuth (optional)
-  GOOGLE_CLIENT_ID?: string;
-  GOOGLE_CLIENT_SECRET?: string;
+  // OAuth - Microsoft Azure AD
+  MICROSOFT_CLIENT_ID: string;
+  MICROSOFT_CLIENT_SECRET: string;
+  MICROSOFT_TENANT_ID?: string; // Optional: defaults to "common" for multi-tenant
 } & Record<string, unknown>;
 
 declare global {
@@ -53,8 +54,9 @@ declare global {
       SUPPORT_EMAIL_FROM?: string;
       SUPPORT_EMAIL_REPLY_TO?: string;
       BASE_URL?: string;
-      GOOGLE_CLIENT_ID?: string;
-      GOOGLE_CLIENT_SECRET?: string;
+      MICROSOFT_CLIENT_ID?: string;
+      MICROSOFT_CLIENT_SECRET?: string;
+      MICROSOFT_TENANT_ID?: string;
       CLOUDFLARE_ACCOUNT_ID?: string;
       CLOUDFLARE_D1_DATABASE_ID?: string;
       CLOUDFLARE_API_TOKEN?: string;

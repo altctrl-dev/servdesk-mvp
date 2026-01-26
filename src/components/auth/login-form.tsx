@@ -3,97 +3,38 @@
 /**
  * Login Form Component
  *
- * Provides email/password authentication form with:
- * - Form validation using react-hook-form + zod
- * - Loading state during submission
+ * Provides Microsoft OAuth authentication with:
+ * - Single sign-on via Microsoft/Azure AD
+ * - Loading state during redirect
  * - Error message display
- * - Redirect handling for MFA and success
  */
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import Link from "next/link";
-import { signInWithEmail } from "@/lib/auth-client";
+import { useSearchParams } from "next/navigation";
+import { signInWithMicrosoft } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-/** Validation schema for login form */
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (data: LoginFormData) => {
+  const handleMicrosoftLogin = async () => {
     setError(null);
     setIsLoading(true);
 
     try {
-      const result = await signInWithEmail(data.email, data.password);
-
-      if (result.error) {
-        // Check if MFA is required
-        if (
-          result.error.message?.includes("two-factor") ||
-          result.error.code === "TWO_FACTOR_REQUIRED"
-        ) {
-          router.push("/login/mfa");
-          return;
-        }
-
-        // Check for cold start / service unavailable errors
-        const isServiceError =
-          result.error.status === 503 ||
-          result.error.status === 429 ||
-          result.error.message?.toLowerCase().includes("service unavailable") ||
-          result.error.message?.toLowerCase().includes("too many requests");
-
-        if (isServiceError) {
-          setError("Server is warming up. Please wait a moment and try again.");
-          return;
-        }
-
-        setError(result.error.message || "Invalid email or password");
-        return;
-      }
-
-      // Success - redirect to the original destination or dashboard
       const redirectTo = searchParams.get("redirect") || "/dashboard";
-      router.push(redirectTo);
-      router.refresh();
+      await signInWithMicrosoft(redirectTo);
     } catch (err) {
       console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
+      setError("Failed to connect to Microsoft. Please try again.");
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="space-y-4">
       {/* Error message */}
       {error && (
         <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -101,48 +42,14 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* Email field */}
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="name@example.com"
-          autoComplete="email"
-          disabled={isLoading}
-          {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
-
-      {/* Password field */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link
-            href="/forgot-password"
-            className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Enter your password"
-          autoComplete="current-password"
-          disabled={isLoading}
-          {...register("password")}
-        />
-        {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        )}
-      </div>
-
-      {/* Submit button */}
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      {/* Microsoft Sign In Button */}
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={handleMicrosoftLogin}
+        disabled={isLoading}
+      >
         {isLoading ? (
           <>
             <svg
@@ -165,12 +72,29 @@ export function LoginForm() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Signing in...
+            Connecting...
           </>
         ) : (
-          "Sign in"
+          <>
+            <svg
+              className="mr-2 h-5 w-5"
+              viewBox="0 0 21 21"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+              <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+              <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+              <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+            </svg>
+            Sign in with Microsoft
+          </>
         )}
       </Button>
-    </form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Use your organization Microsoft account to sign in
+      </p>
+    </div>
   );
 }
