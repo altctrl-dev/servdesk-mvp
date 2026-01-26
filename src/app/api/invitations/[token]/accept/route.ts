@@ -11,12 +11,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@/lib/cf-context";
-import { createAuth } from "@/lib/auth";
-import { getDb, invitations, userProfiles } from "@/db";
+import { getDb, invitations, userProfiles, generateId } from "@/db";
 import { acceptInvitationSchema, safeValidate } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
+// Import Better Auth's password hashing to ensure correct hash format
+import { hashPassword } from "better-auth/crypto";
 
 export const runtime = "edge";
 
@@ -59,7 +60,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { env } = await getCloudflareContext();
     const typedEnv = env as CloudflareEnv;
     const db = getDb(typedEnv.DB);
-    const auth = createAuth(typedEnv);
 
     // Find valid, unexpired, unaccepted invitation
     const [invitation] = await db
@@ -162,33 +162,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Create user in Better Auth
-    let signUpResult;
+    // Hash the password using Better Auth's scrypt hashing
+    const passwordHash = await hashPassword(password);
+
+    // Generate a new user ID
+    const newUserId = generateId();
+    const now = new Date().toISOString();
+
+    // Create user directly in the database (bypassing signUpEmail which has hashing issues)
     try {
-      signUpResult = await auth.api.signUpEmail({
-        body: {
-          email: invitation.email,
-          password,
-          name,
-        },
-      });
-    } catch (signUpError) {
-      console.error("Better Auth signUpEmail failed:", signUpError);
+      await typedEnv.DB.prepare(
+        `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+      ).bind(newUserId, name, invitation.email.toLowerCase(), 0, now, now).run();
+
+      // Create credential account with properly hashed password
+      const accountId = generateId();
+      await typedEnv.DB.prepare(
+        `INSERT INTO account (id, accountId, providerId, userId, password, createdAt, updatedAt) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
+      ).bind(accountId, newUserId, "credential", newUserId, passwordHash, now, now).run();
+    } catch (createError) {
+      console.error("Failed to create user/account:", createError);
       return NextResponse.json(
-        { error: `Failed to create user account: ${signUpError instanceof Error ? signUpError.message : 'Unknown error'}` },
+        { error: `Failed to create user account: ${createError instanceof Error ? createError.message : 'Unknown error'}` },
         { status: 500 }
       );
     }
-
-    if (!signUpResult || !signUpResult.user) {
-      console.error("signUpEmail returned no user:", signUpResult);
-      return NextResponse.json(
-        { error: "Failed to create user account - no user returned" },
-        { status: 500 }
-      );
-    }
-
-    const newUserId = signUpResult.user.id;
 
     // Create user profile with invited role
     try {
