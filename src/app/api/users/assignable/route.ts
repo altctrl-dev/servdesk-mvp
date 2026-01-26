@@ -31,7 +31,7 @@ export async function GET() {
     const { env } = await getCloudflareContext();
     const db = getDb((env as CloudflareEnv).DB);
 
-    // Get active users with SUPER_ADMIN or ADMIN roles
+    // Get active users who can be assigned to tickets
     const profiles = await db
       .select({
         userId: userProfiles.userId,
@@ -39,7 +39,7 @@ export async function GET() {
       })
       .from(userProfiles)
       .where(
-        sql`${userProfiles.role} IN ('SUPER_ADMIN', 'ADMIN') AND ${userProfiles.isActive} = 1`
+        sql`${userProfiles.role} IN ('SUPER_ADMIN', 'ADMIN', 'SUPERVISOR', 'AGENT') AND ${userProfiles.isActive} = 1`
       );
 
     if (profiles.length === 0) {
