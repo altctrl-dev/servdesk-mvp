@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const runtime = 'edge';
 
 interface TrackPageProps {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; ticketNumber?: string; email?: string }>;
 }
 
 function TrackingFormSkeleton() {
@@ -30,7 +30,7 @@ function TrackingFormSkeleton() {
 }
 
 export default async function TrackPage({ searchParams }: TrackPageProps) {
-  const { token } = await searchParams;
+  const { token, ticketNumber, email } = await searchParams;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -48,7 +48,11 @@ export default async function TrackPage({ searchParams }: TrackPageProps) {
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
           <Suspense fallback={<TrackingFormSkeleton />}>
-            <TrackingForm initialToken={token} />
+            <TrackingForm
+              initialToken={token}
+              initialTicketNumber={ticketNumber}
+              initialEmail={email}
+            />
           </Suspense>
         </div>
 

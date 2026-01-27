@@ -48,6 +48,12 @@ interface Customer {
   ticketCount: number;
 }
 
+interface Assignee {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
 interface Ticket {
   id: string;
   ticketNumber: string;
@@ -56,6 +62,7 @@ interface Ticket {
   priority: TicketPriority;
   trackingToken: string;
   assignedToId: string | null;
+  assignee: Assignee | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   firstResponseAt: Date | string | null;
@@ -268,7 +275,9 @@ export function TicketInfoPanel({
               <span className="text-sm">
                 {currentAssignee
                   ? currentAssignee.name || currentAssignee.email
-                  : "Unassigned"}
+                  : ticket.assignee
+                    ? ticket.assignee.name || ticket.assignee.email
+                    : "Unassigned"}
               </span>
             )}
           </div>

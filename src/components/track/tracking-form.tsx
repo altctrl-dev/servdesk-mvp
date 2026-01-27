@@ -41,6 +41,10 @@ type TokenTrackingData = z.infer<typeof tokenTrackingSchema>;
 interface TrackingFormProps {
   /** Initial tracking token from URL (if present) */
   initialToken?: string;
+  /** Optional initial ticket number to prefill */
+  initialTicketNumber?: string;
+  /** Optional initial email to prefill */
+  initialEmail?: string;
 }
 
 interface TrackingApiResponse {
@@ -48,7 +52,11 @@ interface TrackingApiResponse {
   error?: string;
 }
 
-export function TrackingForm({ initialToken }: TrackingFormProps) {
+export function TrackingForm({
+  initialToken,
+  initialTicketNumber,
+  initialEmail,
+}: TrackingFormProps) {
   const [result, setResult] = useState<TrackedTicket | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,8 +66,8 @@ export function TrackingForm({ initialToken }: TrackingFormProps) {
   const emailForm = useForm<EmailTrackingData>({
     resolver: zodResolver(emailTrackingSchema),
     defaultValues: {
-      ticketNumber: "",
-      email: "",
+      ticketNumber: initialTicketNumber || "",
+      email: initialEmail || "",
     },
   });
 
@@ -118,7 +126,7 @@ export function TrackingForm({ initialToken }: TrackingFormProps) {
   function handleNewSearch() {
     setResult(null);
     setError(null);
-    emailForm.reset();
+    emailForm.reset({ ticketNumber: "", email: "" });
     tokenForm.reset();
   }
 

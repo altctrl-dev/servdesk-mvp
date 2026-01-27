@@ -100,8 +100,20 @@ async function getTicketData(ticketId: string, session: NonNullable<Awaited<Retu
       .orderBy(desc(auditLogs.createdAt));
   }
 
+  // Fetch assignee info and attach to ticket object
+  let assignee: { id: string; email: string; name: string | null } | null = null;
+  if (ticket.assignedToId) {
+    const assigneeResult = await (env as CloudflareEnv).DB.prepare(
+      `SELECT u.id, u.email, u.name FROM user u WHERE u.id = ?1 LIMIT 1`
+    ).bind(ticket.assignedToId).first<{ id: string; email: string; name: string | null }>();
+
+    if (assigneeResult) {
+      assignee = assigneeResult;
+    }
+  }
+
   return {
-    ticket,
+    ticket: { ...ticket, assignee },
     messages: ticketMessages,
     auditLogs: audit,
   };
