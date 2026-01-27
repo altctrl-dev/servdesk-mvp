@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ShieldCheck, Ticket, Briefcase, Clock, Headphones, Zap } from "lucide-react";
@@ -13,9 +14,11 @@ export function HomeLanding() {
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans antialiased text-slate-900">
       <nav className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src="/Logos/ServDesk_V1.2.svg"
             alt="ServDesk Logo"
+            width={36}
+            height={36}
             className="h-9 w-9 object-contain"
           />
           <span className="text-xl font-bold tracking-tight">
