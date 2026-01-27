@@ -270,7 +270,6 @@ export function DashboardLayout({ children, user, userRoles }: DashboardLayoutPr
 
   // Navbar configuration
   const navbarConfig: NavbarConfig = {
-    breadcrumbs: generateBreadcrumbs(pathname),
     user: {
       name: user.name || user.email,
       email: user.email,
