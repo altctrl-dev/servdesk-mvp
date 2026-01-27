@@ -12,7 +12,7 @@ import {
 export function HomeLanding() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-10 pt-8 lg:pt-10">
+      <div className="mx-auto flex min-h-screen w-full flex-col px-6 pb-10 pt-8 md:px-8 lg:pt-10 lg:px-12">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <img
