@@ -51,69 +51,6 @@ interface DashboardLayoutProps {
   userRoles: UserRole[];
 }
 
-// Generate breadcrumbs from pathname
-function generateBreadcrumbs(pathname: string): { label: string; href?: string }[] {
-  const segments = pathname.split("/").filter(Boolean);
-  const breadcrumbs: { label: string; href?: string }[] = [];
-
-  // Mapping of path segments to labels
-  const labelMap: Record<string, string> = {
-    dashboard: "Dashboard",
-    tickets: "Tickets",
-    users: "Users",
-    settings: "Settings",
-    admin: "Admin",
-    security: "Security",
-    inbox: "Inbox",
-    views: "Views",
-    "knowledge-base": "Knowledge Base",
-    reports: "Reports",
-    my: "My Queue",
-    team: "Team Queue",
-    unassigned: "Unassigned",
-    all: "All",
-    open: "Open",
-    pending: "Pending",
-    "on-hold": "On Hold",
-    resolved: "Resolved",
-    closed: "Closed",
-    trash: "Trash",
-    shared: "Shared",
-    new: "New",
-    articles: "Articles",
-    drafts: "Drafts",
-    categories: "Categories",
-    sla: "SLA",
-    volume: "Volume",
-    roles: "Roles",
-  };
-
-  let currentPath = "";
-  segments.forEach((segment, index) => {
-    currentPath += `/${segment}`;
-    const isLast = index === segments.length - 1;
-
-    // Check if it's a dynamic segment (like ticket ID)
-    if (segment.startsWith("[") || /^[a-z0-9-]+$/i.test(segment) && !labelMap[segment]) {
-      // It might be an ID, try to format it nicely
-      if (segment.startsWith("TKT-") || segment.length > 10) {
-        breadcrumbs.push({
-          label: segment,
-          href: isLast ? undefined : currentPath,
-        });
-      }
-      return;
-    }
-
-    breadcrumbs.push({
-      label: labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
-      href: isLast ? undefined : currentPath,
-    });
-  });
-
-  return breadcrumbs;
-}
-
 // =============================================================================
 // Sidebar Configuration Generator
 // =============================================================================
