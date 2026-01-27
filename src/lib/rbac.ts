@@ -101,26 +101,23 @@ export async function getSessionWithRole(): Promise<SessionWithRole | null> {
       return null; // Account is locked
     }
 
-    // Fetch roles from user_roles table (multi-role support)
-    const userRoleResults = await db
-      .select({
-        roleName: roles.name,
-      })
-      .from(userRoles)
-      .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .where(eq(userRoles.userId, session.user.id));
-
-    const userRolesList = userRoleResults.map((r) => r.roleName as UserRole);
-
-    // If user_roles is empty, fall back to userProfiles.role (legacy single-role field)
-    // This ensures backward compatibility when roles are set via user management UI
+    // Primary: Use userProfiles.role (set via User Management UI)
+    // This is the single source of truth for roles
     let finalRoles: UserRole[];
-    if (userRolesList.length > 0) {
-      finalRoles = userRolesList;
-    } else if (userProfile?.role) {
+    if (userProfile?.role) {
       finalRoles = [userProfile.role as UserRole];
     } else {
-      finalRoles = ["AGENT" as UserRole];
+      // Fallback: Check user_roles table (for multi-role support if needed later)
+      const userRoleResults = await db
+        .select({
+          roleName: roles.name,
+        })
+        .from(userRoles)
+        .innerJoin(roles, eq(userRoles.roleId, roles.id))
+        .where(eq(userRoles.userId, session.user.id));
+
+      const userRolesList = userRoleResults.map((r) => r.roleName as UserRole);
+      finalRoles = userRolesList.length > 0 ? userRolesList : ["AGENT" as UserRole];
     }
 
     // Get highest role for backward compatibility
