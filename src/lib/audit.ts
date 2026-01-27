@@ -123,14 +123,16 @@ export async function logTicketStatusChanged(
 
 /**
  * Logs ticket assignment.
+ * @param oldAssigneeEmail - Email of previous assignee (or null if unassigned)
+ * @param newAssigneeEmail - Email of new assignee
  */
 export async function logTicketAssigned(
   db: Database,
   ticketId: string,
   userId: string | undefined,
   userEmail: string | undefined,
-  oldAssignee: string | null,
-  newAssignee: string
+  oldAssigneeEmail: string | null,
+  newAssigneeEmail: string
 ) {
   return createAuditLog(db, {
     ticketId,
@@ -139,9 +141,9 @@ export async function logTicketAssigned(
     entityType: "ticket",
     entityId: ticketId,
     action: "assigned",
-    field: "assignedToId",
-    oldValue: oldAssignee || undefined,
-    newValue: newAssignee,
+    field: "assignedTo",
+    oldValue: oldAssigneeEmail || undefined,
+    newValue: newAssigneeEmail,
   });
 }
 

@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@/lib/cf-context";
-import { getDb, tickets, userProfiles } from "@/db";
+import { getDb, tickets } from "@/db";
 import { requireRole } from "@/lib/rbac";
 import { ticketAssignSchema, safeValidate } from "@/lib/validations";
 import { logTicketAssigned } from "@/lib/audit";
@@ -68,29 +68,37 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    // Verify the target user exists and is active
-    const [targetUser] = await db
-      .select({
-        userId: userProfiles.userId,
-        role: userProfiles.role,
-        isActive: userProfiles.isActive,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, assignToUserId))
-      .limit(1);
+    // Verify the target user exists and is active (also get their email for audit log)
+    const typedEnv = env as CloudflareEnv;
+    const targetUserResult = await typedEnv.DB.prepare(`
+      SELECT u.email, u.name, up.role, up.is_active as isActive
+      FROM user u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE u.id = ?1
+      LIMIT 1
+    `).bind(assignToUserId).first<{ email: string; name: string | null; role: string | null; isActive: number | null }>();
 
-    if (!targetUser) {
+    if (!targetUserResult) {
       return NextResponse.json(
         { error: "Target user not found" },
         { status: 404 }
       );
     }
 
-    if (!targetUser.isActive) {
+    if (!targetUserResult.isActive) {
       return NextResponse.json(
         { error: "Cannot assign ticket to inactive user" },
         { status: 400 }
       );
+    }
+
+    // Get old assignee's email for audit log (if there was a previous assignee)
+    let oldAssigneeEmail: string | null = null;
+    if (ticket.assignedToId) {
+      const oldAssigneeResult = await typedEnv.DB.prepare(`
+        SELECT email FROM user WHERE id = ?1 LIMIT 1
+      `).bind(ticket.assignedToId).first<{ email: string }>();
+      oldAssigneeEmail = oldAssigneeResult?.email || null;
     }
 
     // Check if already assigned to the same user
@@ -111,14 +119,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .where(eq(tickets.id, ticketId))
       .returning();
 
-    // Create audit log
+    // Create audit log with user emails for readability
     await logTicketAssigned(
       db,
       ticketId,
       session.user.id,
       session.user.email,
-      ticket.assignedToId,
-      assignToUserId
+      oldAssigneeEmail,
+      targetUserResult.email
     );
 
     return NextResponse.json({
