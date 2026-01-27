@@ -1,8 +1,14 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ShieldCheck, Ticket, Briefcase, Clock, Headphones, Zap } from "lucide-react";
+import { signInWithMicrosoft } from "@/lib/auth-client";
 
 export function HomeLanding() {
+  const handleMicrosoftSignIn = () => {
+    signInWithMicrosoft("/dashboard", "/login?error=unauthorized");
+  };
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans antialiased text-slate-900">
       <nav className="flex items-center justify-between px-8 py-6 bg-white border-b border-slate-200">
@@ -129,6 +135,7 @@ export function HomeLanding() {
           <div className="space-y-4">
             <Button
               variant="outline"
+              onClick={handleMicrosoftSignIn}
               className="w-full flex items-center justify-center gap-3 border-2 border-slate-100 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] transition-all duration-200 group h-14"
             >
               <svg
