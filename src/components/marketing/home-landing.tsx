@@ -15,12 +15,14 @@ export function HomeLanding() {
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-10 pt-8 lg:pt-10">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-base font-semibold text-white shadow-sm">
-              S
-            </div>
+            <img
+              src="/Logos/ServDesk_V1.2.svg"
+              alt="ServDesk Logo"
+              className="h-11 w-11 object-contain"
+            />
             <div>
               <p className="text-base font-semibold leading-tight">
-                Servsys Support
+                ServDesk
               </p>
               <p className="text-xs text-slate-500">
                 Customer support portal
@@ -50,7 +52,7 @@ export function HomeLanding() {
           </Button>
         </header>
 
-        <main className="mt-14 grid flex-1 gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <main className="mt-14 grid flex-1 gap-14 lg:grid-cols-2 lg:items-center">
           <section className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
@@ -73,7 +75,7 @@ export function HomeLanding() {
               />
             </div>
 
-            <div className="max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.25)]">
+            <div className="max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <TicketCheck className="h-4 w-4 text-blue-600" />
                 Track your ticket
@@ -89,7 +91,7 @@ export function HomeLanding() {
           </section>
 
           <section className="flex w-full justify-center lg:justify-end">
-            <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.35)]">
+            <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-8 shadow-xl">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
@@ -126,7 +128,7 @@ export function HomeLanding() {
         </main>
 
         <footer className="mt-12 flex flex-col items-start gap-2 border-t border-slate-100 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} Servsys Global Solutions. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} ServDesk Solutions. All rights reserved.</p>
           <p>Built for high-performance support teams.</p>
         </footer>
       </div>

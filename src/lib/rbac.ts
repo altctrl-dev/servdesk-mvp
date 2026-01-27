@@ -101,7 +101,7 @@ export async function getSessionWithRole(): Promise<SessionWithRole | null> {
       return null; // Account is locked
     }
 
-    // Fetch roles from user_roles table
+    // Fetch roles from user_roles table (multi-role support)
     const userRoleResults = await db
       .select({
         roleName: roles.name,
@@ -112,8 +112,16 @@ export async function getSessionWithRole(): Promise<SessionWithRole | null> {
 
     const userRolesList = userRoleResults.map((r) => r.roleName as UserRole);
 
-    // Default to AGENT if no roles assigned
-    const finalRoles = userRolesList.length > 0 ? userRolesList : ["AGENT" as UserRole];
+    // If user_roles is empty, fall back to userProfiles.role (legacy single-role field)
+    // This ensures backward compatibility when roles are set via user management UI
+    let finalRoles: UserRole[];
+    if (userRolesList.length > 0) {
+      finalRoles = userRolesList;
+    } else if (userProfile?.role) {
+      finalRoles = [userProfile.role as UserRole];
+    } else {
+      finalRoles = ["AGENT" as UserRole];
+    }
 
     // Get highest role for backward compatibility
     const highestRole = getHighestRole(finalRoles) || "AGENT";
