@@ -1,7 +1,7 @@
 /**
  * User Management API Route
  *
- * GET: List all users with pagination (SUPER_ADMIN only)
+ * GET: List all users with pagination (SUPER_ADMIN and ADMIN - read only for ADMIN)
  * POST: Create a new user (SUPER_ADMIN only)
  */
 
@@ -33,13 +33,13 @@ interface UserRow {
 }
 
 // =============================================================================
-// GET: List Users (SUPER_ADMIN only)
+// GET: List Users (SUPER_ADMIN and ADMIN - ADMIN has read-only access)
 // =============================================================================
 
 export async function GET(request: NextRequest) {
   try {
-    // Require SUPER_ADMIN role
-    await requireRole(["SUPER_ADMIN"]);
+    // Allow SUPER_ADMIN and ADMIN to view users
+    await requireRole(["SUPER_ADMIN", "ADMIN"]);
 
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url);

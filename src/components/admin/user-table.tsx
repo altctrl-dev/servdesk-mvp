@@ -93,6 +93,7 @@ interface UserTableProps {
   isLoading?: boolean;
   onPageChange: (page: number) => void;
   onRefresh: () => void;
+  canManage?: boolean; // If false, user can only view (no role changes, no actions)
 }
 
 function formatDate(dateString: string | null): string {
@@ -113,6 +114,7 @@ export function UserTable({
   isLoading,
   onPageChange,
   onRefresh,
+  canManage = true,
 }: UserTableProps) {
   const { toast } = useToast();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -342,7 +344,7 @@ export function UserTable({
 
                     {/* Role */}
                     <TableCell className="hidden sm:table-cell">
-                      {isSelf ? (
+                      {isSelf || !canManage ? (
                         <RoleBadge role={user.role} />
                       ) : (
                         <RoleSelect
@@ -397,67 +399,69 @@ export function UserTable({
 
                     {/* Actions */}
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={isActionLoading}
-                          >
-                            {isActionLoading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MoreHorizontal className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-
-                          {/* Change role - mobile only since desktop has inline select */}
-                          <div className="sm:hidden px-2 py-1.5">
-                            <p className="text-sm font-medium mb-2">Change Role</p>
-                            <RoleSelect
-                              value={user.role}
-                              onValueChange={(newRole) =>
-                                handleRoleChange(user.id, newRole)
-                              }
-                              disabled={isSelf || isActionLoading}
-                              className="w-full"
-                            />
-                          </div>
-                          <DropdownMenuSeparator className="sm:hidden" />
-
-                          {/* Toggle active status */}
-                          {!isSelf && (
-                            <DropdownMenuItem
-                              onClick={() => handleToggleActive(user)}
+                      {canManage ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={isActionLoading}
                             >
-                              {user.isActive ? (
-                                <>
-                                  <UserMinus className="mr-2 h-4 w-4" />
-                                  Deactivate
-                                </>
+                              {isActionLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                <>
-                                  <UserCheck className="mr-2 h-4 w-4" />
-                                  Reactivate
-                                </>
+                                <MoreHorizontal className="h-4 w-4" />
                               )}
-                            </DropdownMenuItem>
-                          )}
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
 
-                          {isSelf && (
-                            <DropdownMenuItem disabled>
-                              <UserCog className="mr-2 h-4 w-4" />
-                              Cannot modify self
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {/* Change role - mobile only since desktop has inline select */}
+                            <div className="sm:hidden px-2 py-1.5">
+                              <p className="text-sm font-medium mb-2">Change Role</p>
+                              <RoleSelect
+                                value={user.role}
+                                onValueChange={(newRole) =>
+                                  handleRoleChange(user.id, newRole)
+                                }
+                                disabled={isSelf || isActionLoading}
+                                className="w-full"
+                              />
+                            </div>
+                            <DropdownMenuSeparator className="sm:hidden" />
+
+                            {/* Toggle active status */}
+                            {!isSelf && (
+                              <DropdownMenuItem
+                                onClick={() => handleToggleActive(user)}
+                              >
+                                {user.isActive ? (
+                                  <>
+                                    <UserMinus className="mr-2 h-4 w-4" />
+                                    Deactivate
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Reactivate
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            )}
+
+                            {isSelf && (
+                              <DropdownMenuItem disabled>
+                                <UserCog className="mr-2 h-4 w-4" />
+                                Cannot modify self
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 );
@@ -512,41 +516,43 @@ export function UserTable({
 
                     {/* Actions */}
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={isActionLoading}
-                          >
-                            {isActionLoading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MoreHorizontal className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleResendInvitation(invitation)}
-                          >
-                            <Mail className="mr-2 h-4 w-4" />
-                            Resend Invitation Email
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setCancelInviteDialog(invitation)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Cancel Invitation
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {canManage ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={isActionLoading}
+                            >
+                              {isActionLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleResendInvitation(invitation)}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Resend Invitation Email
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setCancelInviteDialog(invitation)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Cancel Invitation
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 );

@@ -50,9 +50,10 @@ interface UsersResponse {
 
 interface UserManagementProps {
   currentUserId: string;
+  canManage?: boolean; // If false, user can only view (no invite, no role changes)
 }
 
-export function UserManagement({ currentUserId }: UserManagementProps) {
+export function UserManagement({ currentUserId, canManage = true }: UserManagementProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -143,9 +144,11 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <InviteUserDialog onSuccess={handleRefresh} />
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <InviteUserDialog onSuccess={handleRefresh} />
+          </div>
+        )}
       </div>
 
       {/* Error display */}
@@ -168,6 +171,7 @@ export function UserManagement({ currentUserId }: UserManagementProps) {
           isLoading={isLoading}
           onPageChange={handlePageChange}
           onRefresh={handleRefresh}
+          canManage={canManage}
         />
       )}
     </div>

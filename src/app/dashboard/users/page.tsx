@@ -1,38 +1,40 @@
 /**
  * User Management Page
  *
- * Admin page for managing users (SUPER_ADMIN only).
- * Features:
- * - List all users with pagination
- * - Create new users
- * - Edit user roles
- * - Activate/deactivate users
+ * Admin page for viewing/managing users.
+ * - SUPER_ADMIN: Full access (invite, edit roles, deactivate)
+ * - ADMIN: Read-only access (view users and their roles)
  */
 
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, hasRole } from "@/lib/rbac";
 import { UserManagement } from "./user-management";
 
 export default async function UsersPage() {
-  // Require SUPER_ADMIN role
+  // Allow SUPER_ADMIN and ADMIN to access
   let session;
   try {
-    session = await requireRole(["SUPER_ADMIN"]);
+    session = await requireRole(["SUPER_ADMIN", "ADMIN"]);
   } catch {
     // Not authorized - redirect to dashboard
     redirect("/");
   }
+
+  // Only SUPER_ADMIN can manage users (invite, edit roles, deactivate)
+  const canManage = hasRole(session.roles, "SUPER_ADMIN");
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
         <p className="text-muted-foreground">
-          Manage user accounts, roles, and access permissions
+          {canManage
+            ? "Manage user accounts, roles, and access permissions"
+            : "View user accounts and their access levels"}
         </p>
       </div>
 
-      <UserManagement currentUserId={session.user.id} />
+      <UserManagement currentUserId={session.user.id} canManage={canManage} />
     </div>
   );
 }
