@@ -93,11 +93,59 @@ async function getTicketData(ticketId: string, session: NonNullable<Awaited<Retu
   // Get audit logs if user has permission
   let audit = null;
   if (canViewAuditLogs(session.roles)) {
-    audit = await db
+    const rawAuditLogs = await db
       .select()
       .from(auditLogs)
       .where(eq(auditLogs.ticketId, ticketId))
       .orderBy(desc(auditLogs.createdAt));
+
+    // For "assigned" entries, oldValue/newValue may contain user IDs
+    // We need to resolve these to emails for display
+    const userIdsToResolve = new Set<string>();
+    for (const log of rawAuditLogs) {
+      if (log.action === "assigned") {
+        // Check if oldValue/newValue look like user IDs (not emails)
+        if (log.oldValue && !log.oldValue.includes("@")) {
+          userIdsToResolve.add(log.oldValue);
+        }
+        if (log.newValue && !log.newValue.includes("@")) {
+          userIdsToResolve.add(log.newValue);
+        }
+      }
+    }
+
+    // If there are user IDs to resolve, fetch their emails
+    const userIdToEmail = new Map<string, string>();
+    if (userIdsToResolve.size > 0) {
+      const userIds = Array.from(userIdsToResolve);
+      // Query users table to get emails for these IDs
+      const placeholders = userIds.map(() => "?").join(",");
+      const usersResult = await (env as CloudflareEnv).DB.prepare(
+        `SELECT id, email FROM user WHERE id IN (${placeholders})`
+      ).bind(...userIds).all<{ id: string; email: string }>();
+
+      if (usersResult.results) {
+        for (const user of usersResult.results) {
+          userIdToEmail.set(user.id, user.email);
+        }
+      }
+    }
+
+    // Replace user IDs with emails in audit log entries
+    audit = rawAuditLogs.map((log) => {
+      if (log.action === "assigned") {
+        return {
+          ...log,
+          oldValue: log.oldValue && !log.oldValue.includes("@")
+            ? userIdToEmail.get(log.oldValue) || log.oldValue
+            : log.oldValue,
+          newValue: log.newValue && !log.newValue.includes("@")
+            ? userIdToEmail.get(log.newValue) || log.newValue
+            : log.newValue,
+        };
+      }
+      return log;
+    });
   }
 
   // Fetch assignee info and attach to ticket object

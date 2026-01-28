@@ -348,12 +348,7 @@ export function Sidebar({ config, className }: SidebarProps) {
 
           {/* Sections */}
           {config.sections && config.sections.length > 0 && (
-            <div className="mt-6 space-y-4">
-              {!sidebarCollapsed && (
-                <div className="px-3">
-                  <div className="h-px bg-[hsl(var(--sidebar-border))]" />
-                </div>
-              )}
+            <div className="mt-4 space-y-4">
               {config.sections.map((section) => (
                 <CollapsibleSection
                   key={section.title}
