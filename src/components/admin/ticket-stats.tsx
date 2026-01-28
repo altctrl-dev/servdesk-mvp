@@ -1,19 +1,27 @@
 /**
  * Ticket Stats Component
  *
- * Displays statistics cards for ticket counts by status.
+ * Displays statistics cards for ticket counts.
+ * Cards: Unresolved, Overdue, Due Today, Open, Unassigned
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Ticket, CircleDot, Clock, CheckCircle2 } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Clock,
+  CircleDot,
+  UserX,
+} from "lucide-react";
 
 interface TicketStatsProps {
   stats: {
-    total: number;
+    unresolved: number;
+    overdue: number;
+    dueToday: number;
     open: number;
-    pending: number;
-    resolved: number;
+    unassigned: number;
   };
   isLoading?: boolean;
 }
@@ -24,14 +32,29 @@ interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
   isLoading?: boolean;
+  variant?: "default" | "warning" | "danger";
 }
 
-function StatCard({ title, value, icon: Icon, description, isLoading }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+  isLoading,
+  variant = "default",
+}: StatCardProps) {
+  const iconColor =
+    variant === "danger"
+      ? "text-red-500"
+      : variant === "warning"
+        ? "text-amber-500"
+        : "text-muted-foreground";
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className={`h-4 w-4 ${iconColor}`} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -49,12 +72,29 @@ function StatCard({ title, value, icon: Icon, description, isLoading }: StatCard
 
 export function TicketStats({ stats, isLoading }: TicketStatsProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
       <StatCard
-        title="Total Tickets"
-        value={stats.total}
-        icon={Ticket}
+        title="Unresolved"
+        value={stats.unresolved}
+        icon={AlertCircle}
+        description="Requires attention"
         isLoading={isLoading}
+      />
+      <StatCard
+        title="Overdue"
+        value={stats.overdue}
+        icon={AlertTriangle}
+        description="Past SLA deadline"
+        isLoading={isLoading}
+        variant={stats.overdue > 0 ? "danger" : "default"}
+      />
+      <StatCard
+        title="Due Today"
+        value={stats.dueToday}
+        icon={Clock}
+        description="SLA expires today"
+        isLoading={isLoading}
+        variant={stats.dueToday > 0 ? "warning" : "default"}
       />
       <StatCard
         title="Open"
@@ -64,18 +104,12 @@ export function TicketStats({ stats, isLoading }: TicketStatsProps) {
         isLoading={isLoading}
       />
       <StatCard
-        title="Pending"
-        value={stats.pending}
-        icon={Clock}
-        description="Waiting on customer"
+        title="Unassigned"
+        value={stats.unassigned}
+        icon={UserX}
+        description="Needs assignment"
         isLoading={isLoading}
-      />
-      <StatCard
-        title="Resolved"
-        value={stats.resolved}
-        icon={CheckCircle2}
-        description="Successfully resolved"
-        isLoading={isLoading}
+        variant={stats.unassigned > 0 ? "warning" : "default"}
       />
     </div>
   );
@@ -83,8 +117,8 @@ export function TicketStats({ stats, isLoading }: TicketStatsProps) {
 
 export function TicketStatsSkeleton() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {[...Array(4)].map((_, i) => (
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+      {[...Array(5)].map((_, i) => (
         <Card key={i}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <Skeleton className="h-4 w-24" />

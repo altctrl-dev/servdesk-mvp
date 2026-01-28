@@ -10,7 +10,7 @@ import { getCloudflareContext } from "@/lib/cf-context";
 import { getDb, tickets, customers } from "@/db";
 import { getSessionWithRole, canViewAllTickets } from "@/lib/rbac";
 import { hasAnyRole } from "@/lib/permissions";
-import { eq, desc, and, like, or, count } from "drizzle-orm";
+import { eq, desc, and, like, or, count, sql } from "drizzle-orm";
 import type { CloudflareEnv } from "@/env";
 import type { TicketStatus, TicketPriority } from "@/db/schema";
 import {
@@ -32,6 +32,19 @@ interface DashboardPageProps {
   }>;
 }
 
+/** SLA hours by priority */
+const SLA_HOURS: Record<string, number> = {
+  URGENT: 4,
+  HIGH: 24,
+  NORMAL: 72,
+};
+
+/** Calculate due date based on priority and created time */
+function getDueDate(createdAt: Date, priority: string): Date {
+  const hours = SLA_HOURS[priority] || 72;
+  return new Date(createdAt.getTime() + hours * 60 * 60 * 1000);
+}
+
 async function getTicketStats(
   db: ReturnType<typeof getDb>,
   userId: string,
@@ -42,44 +55,71 @@ async function getTicketStats(
     ? undefined
     : eq(tickets.assignedToId, userId);
 
-  // Get counts for each status
-  const [totalResult] = await db
+  // Unresolved condition (not RESOLVED or CLOSED)
+  const unresolvedCondition = or(
+    eq(tickets.status, "NEW"),
+    eq(tickets.status, "OPEN"),
+    eq(tickets.status, "PENDING_CUSTOMER"),
+    eq(tickets.status, "ON_HOLD")
+  );
+
+  // Get unresolved count
+  const [unresolvedResult] = await db
     .select({ count: count() })
     .from(tickets)
-    .where(baseCondition);
+    .where(baseCondition ? and(baseCondition, unresolvedCondition) : unresolvedCondition);
 
+  // Get open count (NEW + OPEN)
+  const openCondition = or(eq(tickets.status, "NEW"), eq(tickets.status, "OPEN"));
   const [openResult] = await db
     .select({ count: count() })
     .from(tickets)
-    .where(
-      baseCondition
-        ? and(baseCondition, or(eq(tickets.status, "NEW"), eq(tickets.status, "OPEN")))
-        : or(eq(tickets.status, "NEW"), eq(tickets.status, "OPEN"))
-    );
+    .where(baseCondition ? and(baseCondition, openCondition) : openCondition);
 
-  const [pendingResult] = await db
+  // Get unassigned count (unresolved tickets without assignee)
+  const [unassignedResult] = await db
     .select({ count: count() })
     .from(tickets)
     .where(
-      baseCondition
-        ? and(baseCondition, eq(tickets.status, "PENDING_CUSTOMER"))
-        : eq(tickets.status, "PENDING_CUSTOMER")
+      and(
+        unresolvedCondition,
+        sql`${tickets.assignedToId} IS NULL`
+      )
     );
 
-  const [resolvedResult] = await db
-    .select({ count: count() })
+  // Get all unresolved tickets to calculate overdue and due today
+  const unresolvedTickets = await db
+    .select({
+      id: tickets.id,
+      priority: tickets.priority,
+      createdAt: tickets.createdAt,
+    })
     .from(tickets)
-    .where(
-      baseCondition
-        ? and(baseCondition, eq(tickets.status, "RESOLVED"))
-        : eq(tickets.status, "RESOLVED")
-    );
+    .where(baseCondition ? and(baseCondition, unresolvedCondition) : unresolvedCondition);
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+  let overdueCount = 0;
+  let dueTodayCount = 0;
+
+  for (const ticket of unresolvedTickets) {
+    const dueDate = getDueDate(ticket.createdAt, ticket.priority);
+
+    if (dueDate < now) {
+      overdueCount++;
+    } else if (dueDate >= startOfToday && dueDate < endOfToday) {
+      dueTodayCount++;
+    }
+  }
 
   return {
-    total: totalResult?.count || 0,
+    unresolved: unresolvedResult?.count || 0,
+    overdue: overdueCount,
+    dueToday: dueTodayCount,
     open: openResult?.count || 0,
-    pending: pendingResult?.count || 0,
-    resolved: resolvedResult?.count || 0,
+    unassigned: unassignedResult?.count || 0,
   };
 }
 
