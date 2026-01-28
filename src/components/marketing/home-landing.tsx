@@ -136,26 +136,27 @@ export function HomeLanding() {
           </div>
 
           <div className="space-y-4">
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={handleMicrosoftSignIn}
-              className="w-full flex items-center justify-center gap-3 border-2 border-slate-100 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] transition-all duration-200 group h-14"
+              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] transition-all duration-200 h-14"
             >
               <svg
                 className="w-5 h-5"
-                viewBox="0 0 23 23"
+                viewBox="0 0 21 21"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
-                <path fill="#f3f3f3" d="M0 0h23v23H0z" />
-                <path fill="#f35325" d="M1 1h10v10H1z" />
-                <path fill="#81bc06" d="M12 1h10v10H12z" />
-                <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                <path fill="#ffba08" d="M12 12h10v10H12z" />
+                <rect x="0" y="0" width="10" height="10" fill="#F25022" />
+                <rect x="11" y="0" width="10" height="10" fill="#7FBA00" />
+                <rect x="0" y="11" width="10" height="10" fill="#00A4EF" />
+                <rect x="11" y="11" width="10" height="10" fill="#FFB900" />
               </svg>
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-slate-800">
                 Sign in with Microsoft 365
               </span>
-            </Button>
+            </button>
 
             <p className="text-[11px] text-center text-slate-400 mt-6">
               By logging in, you agree to the ServDesk Internal Security
