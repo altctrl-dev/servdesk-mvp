@@ -178,6 +178,67 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * Strips HTML tags and extracts plain text content from HTML emails.
+ * Also removes email signatures and normalizes whitespace.
+ */
+function stripHtml(html: string): string {
+  if (!html) return "";
+
+  let text = html;
+
+  // Remove style tags and their content
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+
+  // Remove script tags and their content
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+
+  // Remove HTML comments
+  text = text.replace(/<!--[\s\S]*?-->/g, "");
+
+  // Remove head section
+  text = text.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
+
+  // Replace common block elements with newlines
+  text = text.replace(/<\/(p|div|tr|h[1-6]|li|blockquote)>/gi, "\n");
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<hr\s*\/?>/gi, "\n---\n");
+
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]+>/g, "");
+
+  // Decode common HTML entities
+  text = text.replace(/&nbsp;/gi, " ");
+  text = text.replace(/&amp;/gi, "&");
+  text = text.replace(/&lt;/gi, "<");
+  text = text.replace(/&gt;/gi, ">");
+  text = text.replace(/&quot;/gi, '"');
+  text = text.replace(/&#039;/gi, "'");
+  text = text.replace(/&apos;/gi, "'");
+  text = text.replace(/&#x27;/gi, "'");
+  text = text.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+
+  // Remove email signature patterns (common patterns from Outlook, Gmail, etc.)
+  // Look for signature separators and remove everything after
+  const signaturePatterns = [
+    /\n--\s*\n[\s\S]*/,  // Standard email signature separator
+    /\n_{3,}[\s\S]*/,    // Underscores separator
+    /\nSent from my [\s\S]*/i,  // Mobile signatures
+    /\nGet Outlook for [\s\S]*/i,  // Outlook mobile
+  ];
+
+  for (const pattern of signaturePatterns) {
+    text = text.replace(pattern, "");
+  }
+
+  // Normalize whitespace
+  text = text.replace(/[ \t]+/g, " ");  // Multiple spaces/tabs to single space
+  text = text.replace(/\n{3,}/g, "\n\n");  // Multiple newlines to max 2
+  text = text.trim();
+
+  return text;
+}
+
+/**
  * Gets the customer's display name or falls back to email.
  */
 function getDisplayName(customer: CustomerEmailData): string {
@@ -391,7 +452,7 @@ export function adminNotificationTemplate(params: {
     ${initialMessage ? `
     <p><strong>Initial Message:</strong></p>
     <div style="${baseStyles.messageContent}">
-      ${escapeHtml(initialMessage)}
+      ${escapeHtml(stripHtml(initialMessage))}
     </div>
     ` : ""}
 
