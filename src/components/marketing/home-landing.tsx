@@ -252,7 +252,7 @@ export function HomeLanding() {
 
           {/* Row 2: 2 centered badges */}
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 text-sm font-normal rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-500 text-sm font-normal rounded-full">
               <Award className="h-4 w-4" />
               10,000+ Tickets Resolved
             </span>
