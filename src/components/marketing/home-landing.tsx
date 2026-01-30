@@ -3,8 +3,8 @@
 import { useState } from "react";
 import {
   Search,
-  Ticket,
-  Clock,
+  FileText,
+  History,
   BookOpen,
   Menu,
   X,
@@ -20,9 +20,9 @@ export function HomeLanding() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
-      {/* Navigation - Sticky */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-50 flex-shrink-0">
+    <div className="h-screen flex flex-col bg-slate-100">
+      {/* Navigation */}
+      <nav className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-50 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <div className="bg-blue-600 text-white p-2 rounded-lg">
             <Layers className="h-5 w-5" />
@@ -33,7 +33,7 @@ export function HomeLanding() {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex space-x-8 text-sm font-medium text-gray-600">
+        <div className="hidden md:flex space-x-10 text-sm font-medium text-gray-600">
           <a href="/kb" className="hover:text-blue-600 transition-colors">
             Knowledge Base
           </a>
@@ -55,7 +55,7 @@ export function HomeLanding() {
         <div className="hidden md:block">
           <button
             onClick={handleMicrosoftSignIn}
-            className="flex items-center space-x-2 bg-gray-50 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+            className="flex items-center space-x-2 bg-white border border-gray-300 px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
           >
             <svg
               className="w-4 h-4 flex-shrink-0"
@@ -111,7 +111,7 @@ export function HomeLanding() {
           </a>
           <button
             onClick={handleMicrosoftSignIn}
-            className="w-full flex items-center justify-center space-x-2 bg-gray-50 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <svg
               className="w-4 h-4 flex-shrink-0"
@@ -131,18 +131,18 @@ export function HomeLanding() {
       )}
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-700 text-white py-12 px-6 flex-shrink-0">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
+      <section className="bg-gradient-to-br from-blue-500 to-blue-600 text-white py-16 px-6 flex-shrink-0">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
             How can we help you today?
           </h1>
-          <p className="text-blue-100 text-base md:text-lg mb-6 max-w-2xl mx-auto">
+          <p className="text-blue-100 text-base md:text-lg mb-10 max-w-2xl mx-auto">
             Access the Knowledge Base, track existing requests, or submit a new
             inquiry to our support team.
           </p>
 
           {/* Search Bar */}
-          <div className="relative max-w-xl mx-auto">
+          <div className="relative max-w-2xl mx-auto">
             <label htmlFor="hero-search" className="sr-only">
               Search for articles, solutions, or FAQs
             </label>
@@ -150,10 +150,10 @@ export function HomeLanding() {
               id="hero-search"
               type="text"
               placeholder="Search for articles, solutions, or FAQs..."
-              className="w-full px-6 py-4 pr-20 rounded-full text-gray-800 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-6 py-4 pr-16 rounded-full text-gray-700 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-base"
             />
             <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 p-2.5 px-5 rounded-full hover:bg-blue-700 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 p-3 rounded-full hover:bg-blue-600 transition-colors"
               aria-label="Search"
             >
               <Search className="h-5 w-5 text-white" />
@@ -163,64 +163,64 @@ export function HomeLanding() {
       </section>
 
       {/* Main Content */}
-      <main className="flex-grow max-w-6xl mx-auto py-8 px-6 w-full flex flex-col justify-center">
+      <main className="flex-grow max-w-5xl mx-auto px-6 w-full">
         {/* Action Cards */}
-        <div className="grid md:grid-cols-3 gap-6 -mt-16">
+        <div className="grid md:grid-cols-3 gap-8 -mt-10">
           {/* Submit Ticket Card */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="text-blue-600 text-2xl mb-3">
-              <Ticket className="h-7 w-7" />
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="text-blue-500 mb-5">
+              <FileText className="h-10 w-10" strokeWidth={1.5} />
             </div>
-            <h3 className="text-lg font-bold mb-2 text-gray-900">
+            <h3 className="text-xl font-bold mb-3 text-gray-900">
               Submit a Ticket
             </h3>
-            <p className="text-gray-500 mb-4 text-sm">
+            <p className="text-gray-500 mb-6 text-sm leading-relaxed">
               Cannot find a solution? Open a new request and we&apos;ll get back
               to you shortly.
             </p>
             <a
               href="mailto:support@servdesk.co?subject=Support%20Request"
-              className="block w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-center hover:bg-blue-700 transition-colors"
+              className="block w-full bg-blue-500 text-white py-3 rounded-xl font-semibold text-center hover:bg-blue-600 transition-colors"
             >
               Open Request
             </a>
           </div>
 
           {/* Track Status Card */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="text-emerald-500 text-2xl mb-3">
-              <Clock className="h-7 w-7" />
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="text-emerald-500 mb-5">
+              <History className="h-10 w-10" strokeWidth={1.5} />
             </div>
-            <h3 className="text-lg font-bold mb-2 text-gray-900">
+            <h3 className="text-xl font-bold mb-3 text-gray-900">
               Track Status
             </h3>
-            <p className="text-gray-500 mb-4 text-sm">
+            <p className="text-gray-500 mb-6 text-sm leading-relaxed">
               Check the real-time progress of your request using your ticket ID
               and email.
             </p>
             <a
               href="/track"
-              className="block w-full border border-emerald-500 text-emerald-600 py-2 rounded-lg font-semibold text-center hover:bg-emerald-50 transition-colors"
+              className="block w-full border-2 border-emerald-500 text-emerald-600 py-3 rounded-xl font-semibold text-center hover:bg-emerald-50 transition-colors"
             >
               View Progress
             </a>
           </div>
 
           {/* Knowledge Base Card */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="text-purple-600 text-2xl mb-3">
-              <BookOpen className="h-7 w-7" />
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="text-purple-500 mb-5">
+              <BookOpen className="h-10 w-10" strokeWidth={1.5} />
             </div>
-            <h3 className="text-lg font-bold mb-2 text-gray-900">
+            <h3 className="text-xl font-bold mb-3 text-gray-900">
               Knowledge Base
             </h3>
-            <p className="text-gray-500 mb-4 text-sm">
+            <p className="text-gray-500 mb-6 text-sm leading-relaxed">
               Access step-by-step guides, FAQs, and self-service troubleshooting
               manuals.
             </p>
             <a
               href="/kb"
-              className="block w-full border border-purple-500 text-purple-600 py-2 rounded-lg font-semibold text-center hover:bg-purple-50 transition-colors"
+              className="block w-full border-2 border-purple-500 text-purple-600 py-3 rounded-xl font-semibold text-center hover:bg-purple-50 transition-colors"
             >
               Browse Docs
             </a>
