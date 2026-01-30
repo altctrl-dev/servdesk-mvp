@@ -27,18 +27,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Prevent FOUC for theme */}
+        {/* Prevent FOUC for theme - hide body until theme is resolved */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                document.documentElement.style.visibility = 'hidden';
                 try {
                   const theme = localStorage.getItem('theme');
                   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   if (theme === 'dark' || (!theme && prefersDark)) {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}
+                document.documentElement.style.visibility = '';
               })();
             `,
           }}
