@@ -175,7 +175,7 @@ export function HomeLanding() {
             <div className="text-blue-600 text-3xl mb-4">
               <Ticket className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Submit a Ticket</h3>
+            <h3 className="text-xl font-bold mb-2 text-gray-900">Submit a Ticket</h3>
             <p className="text-gray-500 mb-6 text-sm">
               Cannot find a solution? Open a new request and we&apos;ll get back
               to you shortly.
@@ -193,7 +193,7 @@ export function HomeLanding() {
             <div className="text-emerald-500 text-3xl mb-4">
               <Clock className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Track Status</h3>
+            <h3 className="text-xl font-bold mb-2 text-gray-900">Track Status</h3>
             <p className="text-gray-500 mb-6 text-sm">
               Check the real-time progress of your request using your ticket ID
               and email.
@@ -211,7 +211,7 @@ export function HomeLanding() {
             <div className="text-purple-600 text-3xl mb-4">
               <BookOpen className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Knowledge Base</h3>
+            <h3 className="text-xl font-bold mb-2 text-gray-900">Knowledge Base</h3>
             <p className="text-gray-500 mb-6 text-sm">
               Access step-by-step guides, FAQs, and self-service troubleshooting
               manuals.
