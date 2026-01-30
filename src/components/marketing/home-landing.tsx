@@ -252,11 +252,11 @@ export function HomeLanding() {
 
           {/* Row 2: 2 centered badges */}
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-500 text-sm font-normal rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-500 text-sm font-normal rounded-full">
               <Award className="h-4 w-4" />
               10,000+ Tickets Resolved
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-500 text-sm font-normal rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-500 text-sm font-normal rounded-full">
               <TrendingDown className="h-4 w-4" />
               &lt; 5% Escalation Rate
             </span>
