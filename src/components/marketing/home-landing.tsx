@@ -236,15 +236,15 @@ export function HomeLanding() {
         <div className="mt-12 space-y-4">
           {/* Row 1: 3 badges */}
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-500 text-sm font-normal rounded-full">
               <Target className="h-4 w-4" />
               98% SLA Met
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 text-sm font-medium rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-500 text-sm font-normal rounded-full">
               <Clock className="h-4 w-4" />
               &lt; 2hr Avg Response
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 text-sm font-medium rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-500 text-sm font-normal rounded-full">
               <Lightbulb className="h-4 w-4" />
               85% Self-Resolved
             </span>
@@ -252,11 +252,11 @@ export function HomeLanding() {
 
           {/* Row 2: 2 centered badges */}
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 text-sm font-medium rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-500 text-sm font-normal rounded-full">
               <Award className="h-4 w-4" />
               10,000+ Tickets Resolved
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 text-sm font-medium rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-500 text-sm font-normal rounded-full">
               <TrendingDown className="h-4 w-4" />
               &lt; 5% Escalation Rate
             </span>
