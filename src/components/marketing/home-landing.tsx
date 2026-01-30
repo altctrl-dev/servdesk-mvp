@@ -8,13 +8,13 @@ import {
   BookOpen,
   Menu,
   X,
-  Layers,
   Clock,
   Target,
   TrendingDown,
   Award,
   Lightbulb,
 } from "lucide-react";
+import Image from "next/image";
 import { signInWithMicrosoft } from "@/lib/auth-client";
 
 export function HomeLanding() {
@@ -29,9 +29,13 @@ export function HomeLanding() {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-50 flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="bg-blue-600 text-white p-2 rounded-lg">
-            <Layers className="h-5 w-5" />
-          </div>
+          <Image
+            src="/Logos/ServDesk_V1.3.svg"
+            alt="ServDesk Logo"
+            width={36}
+            height={36}
+            className="h-9 w-9"
+          />
           <span className="text-xl font-bold tracking-tight text-gray-800">
             SERVDESK
           </span>

@@ -12,6 +12,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ServDesk MVP",
   description: "AI-powered service desk for small businesses",
+  icons: {
+    icon: "/Logos/ServDesk_V1.3.png",
+    shortcut: "/Logos/ServDesk_V1.3.png",
+    apple: "/Logos/ServDesk_V1.3.png",
+  },
 };
 
 export default function RootLayout({
