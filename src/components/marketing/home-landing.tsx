@@ -9,6 +9,11 @@ import {
   Menu,
   X,
   Layers,
+  Headphones,
+  Clock,
+  Zap,
+  CheckCircle,
+  Mail,
 } from "lucide-react";
 import { signInWithMicrosoft } from "@/lib/auth-client";
 
@@ -224,6 +229,50 @@ export function HomeLanding() {
             >
               Browse Docs
             </a>
+          </div>
+        </div>
+
+        {/* Trust Indicators & Info Section */}
+        <div className="mt-12 space-y-8">
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-full">
+              <Headphones className="h-4 w-4" />
+              24/7 Support
+            </span>
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 text-sm font-medium rounded-full">
+              <Clock className="h-4 w-4" />
+              Avg. response: 2hrs
+            </span>
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 text-sm font-medium rounded-full">
+              <Zap className="h-4 w-4" />
+              99.9% Uptime
+            </span>
+          </div>
+
+          {/* System Status & Email Info */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-600">
+            {/* System Status */}
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              <span>All systems operational</span>
+            </div>
+
+            <span className="hidden md:inline text-gray-300">|</span>
+
+            {/* Email Info */}
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-blue-500" />
+              <span>
+                Raise a ticket by emailing{" "}
+                <a
+                  href="mailto:support@servsys.com"
+                  className="text-blue-600 font-medium hover:underline"
+                >
+                  support@servsys.com
+                </a>
+              </span>
+            </div>
           </div>
         </div>
       </main>
