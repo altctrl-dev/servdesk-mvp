@@ -27,7 +27,7 @@ export function HomeLanding() {
   return (
     <div className="h-screen flex flex-col bg-slate-100">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-50 flex-shrink-0">
+      <nav className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 flex justify-between items-center z-50 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <Image
             src="/Logos/ServDesk_V1.3.svg"
@@ -159,7 +159,7 @@ export function HomeLanding() {
               id="hero-search"
               type="text"
               placeholder="Search for articles, solutions, or FAQs..."
-              className="w-full px-6 py-4 pr-16 rounded-full text-gray-700 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-base"
+              className="w-full px-6 py-4 pr-16 rounded-full bg-white text-gray-700 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-base"
             />
             <button
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 p-3 rounded-full hover:bg-blue-600 transition-colors"
