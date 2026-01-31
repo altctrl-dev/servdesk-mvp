@@ -308,33 +308,30 @@ export function Sidebar({ config, className }: SidebarProps) {
           className
         )}
       >
-        {/* Header - matches nav item alignment */}
-        <div className="flex h-14 items-center border-b border-[hsl(var(--sidebar-border))]">
-          {/* Logo and title container - same padding as nav items */}
-          <div className="flex items-center gap-3 px-3 py-2 flex-1">
-            {/* Logo - aligned with nav icons */}
-            <div className="flex-shrink-0">
-              {config.logo}
-            </div>
-
-            {/* Title - aligned with nav item text, collapses to zero width */}
-            {config.title && (
-              <span
-                className={cn(
-                  "font-semibold text-[hsl(var(--sidebar-foreground))] whitespace-nowrap overflow-hidden transition-all duration-300",
-                  sidebarCollapsed ? "opacity-0 w-0" : "opacity-100"
-                )}
-              >
-                {config.title}
-              </span>
-            )}
+        {/* Header - logo and brand name */}
+        <div className="flex h-14 items-center border-b border-[hsl(var(--sidebar-border))] px-3 gap-3">
+          {/* Logo - never shrinks */}
+          <div className="flex-shrink-0">
+            {config.logo}
           </div>
+
+          {/* Title - collapses to zero width */}
+          {config.title && (
+            <span
+              className={cn(
+                "font-semibold text-[hsl(var(--sidebar-foreground))] whitespace-nowrap overflow-hidden transition-all duration-300",
+                sidebarCollapsed ? "opacity-0 w-0" : "opacity-100"
+              )}
+            >
+              {config.title}
+            </span>
+          )}
 
           {/* Mobile close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden flex-shrink-0 mr-2"
+            className="md:hidden flex-shrink-0 ml-auto"
             onClick={() => setMobileMenuOpen(false)}
           >
             <X className="h-5 w-5" />
