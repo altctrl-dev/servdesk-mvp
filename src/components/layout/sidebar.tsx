@@ -99,23 +99,38 @@ function NavItemLink({ item, isActive, isCollapsed }: NavItemLinkProps) {
         isActive
           ? "bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-foreground))] font-medium"
           : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-hover))]",
-        item.disabled && "pointer-events-none opacity-50",
-        isCollapsed && "justify-center px-2"
+        item.disabled && "pointer-events-none opacity-50"
       )}
     >
-      <Icon className="h-5 w-5 shrink-0" />
-      {!isCollapsed && (
-        <>
-          <span className="flex-1">{item.title}</span>
-          {item.badge !== undefined && item.badge > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
-              {item.badge > 99 ? "99+" : item.badge}
-            </span>
+      {/* Icon - NEVER shrinks, stays fixed */}
+      <div className="relative flex-shrink-0">
+        <Icon className="h-5 w-5" />
+        {/* Badge dot when collapsed */}
+        {isCollapsed && item.badge !== undefined && item.badge > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground">
+            {item.badge > 99 ? "99+" : item.badge}
+          </span>
+        )}
+      </div>
+
+      {/* Label - collapses to zero width when sidebar is collapsed */}
+      <span
+        className={cn(
+          "flex-1 whitespace-nowrap overflow-hidden transition-all duration-300",
+          isCollapsed ? "opacity-0 w-0" : "opacity-100"
+        )}
+      >
+        {item.title}
+      </span>
+
+      {/* Badge - also collapses to zero width */}
+      {item.badge !== undefined && item.badge > 0 && (
+        <span
+          className={cn(
+            "flex h-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground transition-all duration-300",
+            isCollapsed ? "opacity-0 w-0 min-w-0 px-0" : "opacity-100 min-w-5 px-1.5"
           )}
-        </>
-      )}
-      {isCollapsed && item.badge !== undefined && item.badge > 0 && (
-        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground">
+        >
           {item.badge > 99 ? "99+" : item.badge}
         </span>
       )}

@@ -133,7 +133,7 @@ function generateSidebarConfig(userRoles: UserRole[], pathname: string): Sidebar
   const accessibleKbItems = kbItems.filter(item => canAccess(item.roles));
   if (accessibleKbItems.length > 0) {
     sections.push({
-      title: "Knowledge Base",
+      title: "FAQ+",
       icon: BookOpen,
       defaultOpen: pathname.startsWith("/dashboard/knowledge-base"),
       items: accessibleKbItems.map(({ title, href, icon }) => ({ title, href, icon })),
