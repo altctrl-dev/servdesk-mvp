@@ -186,13 +186,15 @@ function CollapsibleSection({
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "flex w-full items-center justify-center rounded-lg p-2 text-sm transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                   hasActiveItem
                     ? "bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-foreground))]"
                     : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-hover))]"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <div className="flex-shrink-0">
+                  <Icon className="h-5 w-5" />
+                </div>
               </button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
@@ -243,11 +245,13 @@ function CollapsibleSection({
               : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-hover))]"
           )}
         >
-          <Icon className="h-5 w-5 shrink-0" />
+          <div className="flex-shrink-0">
+            <Icon className="h-5 w-5" />
+          </div>
           <span className="flex-1 text-left font-medium">{section.title}</span>
           <ChevronDown
             className={cn(
-              "h-4 w-4 transition-transform",
+              "h-4 w-4 flex-shrink-0 transition-transform",
               isOpen && "rotate-180"
             )}
           />
@@ -304,29 +308,33 @@ export function Sidebar({ config, className }: SidebarProps) {
           className
         )}
       >
-        {/* Header */}
-        <div
-          className={cn(
-            "flex h-14 items-center border-b border-[hsl(var(--sidebar-border))] px-4",
-            sidebarCollapsed && "justify-center px-2"
-          )}
-        >
-          {!sidebarCollapsed && (
-            <div className="flex flex-1 items-center gap-2">
-              {config.logo}
-              {config.title && (
-                <span className="font-semibold text-[hsl(var(--sidebar-foreground))]">
-                  {config.title}
-                </span>
+        {/* Header - icons stay fixed, text collapses */}
+        <div className="flex h-14 items-center border-b border-[hsl(var(--sidebar-border))] px-3">
+          {/* Logo - never shrinks */}
+          <div className="flex-shrink-0">
+            {config.logo}
+          </div>
+
+          {/* Title - collapses to zero width */}
+          {config.title && (
+            <span
+              className={cn(
+                "font-semibold text-[hsl(var(--sidebar-foreground))] whitespace-nowrap overflow-hidden transition-all duration-300 ml-2",
+                sidebarCollapsed ? "opacity-0 w-0 ml-0" : "opacity-100 flex-1"
               )}
-            </div>
+            >
+              {config.title}
+            </span>
           )}
+
+          {/* Spacer when no title */}
+          {!config.title && <div className={cn("transition-all duration-300", sidebarCollapsed ? "w-0" : "flex-1")} />}
 
           {/* Mobile close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden flex-shrink-0"
             onClick={() => setMobileMenuOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -336,7 +344,7 @@ export function Sidebar({ config, className }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden h-8 w-8 md:flex"
+            className="hidden h-8 w-8 md:flex flex-shrink-0"
             onClick={toggleSidebar}
           >
             {sidebarCollapsed ? (
