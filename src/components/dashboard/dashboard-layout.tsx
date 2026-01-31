@@ -7,6 +7,7 @@
  * This separates the configuration from the layout wrapper for better maintainability.
  */
 
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import type { SidebarConfig, NavbarConfig } from "@/components/layout/index";
@@ -176,7 +177,16 @@ function generateSidebarConfig(userRoles: UserRole[], pathname: string): Sidebar
   }
 
   return {
-    title: "ServDesk",
+    logo: (
+      <Image
+        src="/Logos/ServDesk_V1.3.svg"
+        alt="ServDesk"
+        width={28}
+        height={28}
+        className="h-7 w-7"
+      />
+    ),
+    title: "SERVDESK",
     mainItems: [
       {
         title: "Dashboard",
