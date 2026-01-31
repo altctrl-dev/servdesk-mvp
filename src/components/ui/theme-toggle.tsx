@@ -41,7 +41,7 @@ export function ThemeToggle({
     // Remove the transitioning class after animation completes
     setTimeout(() => {
       document.documentElement.classList.remove("transitioning");
-    }, 200);
+    }, 100);
   }, [resolvedTheme, setTheme]);
 
   // Show placeholder during SSR/hydration to prevent mismatch
