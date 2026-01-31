@@ -182,7 +182,7 @@ export function Navbar({ config, className }: NavbarProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 transition-all duration-300",
+        "sticky top-0 z-30 flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 transition-[padding] duration-300",
         // Offset for sidebar
         sidebarCollapsed ? "md:pl-[calc(64px+1rem)]" : "md:pl-[calc(256px+1rem)]",
         className

@@ -33,10 +33,10 @@ export function LayoutWrapper({
       {/* Sidebar */}
       <Sidebar config={sidebarConfig} />
 
-      {/* Main area */}
+      {/* Main area - only transition margin, not colors */}
       <div
         className={cn(
-          "flex min-h-screen flex-col transition-all duration-300",
+          "flex min-h-screen flex-col transition-[margin] duration-300",
           sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         )}
       >

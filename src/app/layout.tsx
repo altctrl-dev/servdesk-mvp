@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SonnerProvider } from "@/components/providers/sonner-provider";
 import "./globals.css";
@@ -19,20 +20,35 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read theme from cookie for SSR (prevents FOUC)
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get("theme");
+  const theme = themeCookie?.value;
+
+  // Determine if dark mode should be applied server-side
+  // If cookie is "dark", apply dark. If "light", don't. If not set, leave it to client.
+  const isDark = theme === "dark";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={isDark ? "dark" : ""}
+      style={isDark ? { colorScheme: "dark" } : undefined}
+    >
       <head>
-        {/* Prevent FOUC: Inject critical dark mode CSS and set theme before body renders */}
+        {/* Fallback for first-time visitors (no cookie yet) - check localStorage */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 var d = document.documentElement;
+                if (d.classList.contains('dark')) return; // Already set by server
                 try {
                   var theme = localStorage.getItem('theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -40,11 +56,6 @@ export default function RootLayout({
                   if (isDark) {
                     d.classList.add('dark');
                     d.style.colorScheme = 'dark';
-                    d.style.backgroundColor = 'hsl(224, 71%, 4%)';
-                  } else {
-                    d.classList.remove('dark');
-                    d.style.colorScheme = 'light';
-                    d.style.backgroundColor = 'hsl(0, 0%, 100%)';
                   }
                 } catch (e) {}
               })();

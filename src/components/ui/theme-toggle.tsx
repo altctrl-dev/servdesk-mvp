@@ -4,6 +4,7 @@
  * Theme Toggle
  *
  * Button to toggle between light and dark themes with smooth transitions.
+ * Saves theme to cookie for SSR support (prevents FOUC).
  */
 
 import { useTheme } from "next-themes";
@@ -16,6 +17,15 @@ interface ThemeToggleProps {
   size?: "default" | "sm" | "lg" | "icon";
 }
 
+/**
+ * Save theme to cookie for server-side access.
+ * Cookie expires in 1 year and is accessible from all paths.
+ */
+function setThemeCookie(theme: string) {
+  const maxAge = 60 * 60 * 24 * 365; // 1 year
+  document.cookie = `theme=${theme};path=/;max-age=${maxAge};SameSite=Lax`;
+}
+
 export function ThemeToggle({
   variant = "ghost",
   size = "icon",
@@ -23,11 +33,16 @@ export function ThemeToggle({
   const { theme, setTheme } = useTheme();
 
   const handleThemeChange = useCallback(() => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+
     // Add transitioning class to enable smooth color transitions
     document.documentElement.classList.add("transitioning");
 
-    // Change the theme
-    setTheme(theme === "dark" ? "light" : "dark");
+    // Save to cookie for SSR
+    setThemeCookie(newTheme);
+
+    // Change the theme (also saves to localStorage via next-themes)
+    setTheme(newTheme);
 
     // Remove the transitioning class after animation completes
     setTimeout(() => {

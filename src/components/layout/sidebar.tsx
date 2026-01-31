@@ -278,10 +278,10 @@ export function Sidebar({ config, className }: SidebarProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - only transition width/transform, not colors */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar))] transition-all duration-300",
+          "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar))] transition-[width,transform] duration-300",
           sidebarCollapsed ? "w-16" : "w-64",
           // Mobile: hidden by default, shown as overlay
           "max-md:w-64 max-md:-translate-x-full",
