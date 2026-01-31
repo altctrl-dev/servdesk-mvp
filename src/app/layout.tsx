@@ -30,7 +30,7 @@ export default function RootLayout({
         {/*
           FOUC Prevention Script - runs before any rendering
           Reads localStorage and applies theme class immediately.
-          If no localStorage, falls back to system preference.
+          Defaults to light mode if no preference is saved.
         */}
         <script
           dangerouslySetInnerHTML={{
@@ -38,9 +38,7 @@ export default function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = stored === 'dark' || (stored !== 'light' && prefersDark);
-                  if (isDark) {
+                  if (stored === 'dark') {
                     document.documentElement.classList.add('dark');
                   }
                 } catch (e) {}
