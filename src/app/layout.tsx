@@ -28,10 +28,9 @@ export default async function RootLayout({
   // Read theme from cookie for SSR (prevents FOUC)
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
-  const theme = themeCookie?.value;
+  const theme = themeCookie?.value as "dark" | "light" | undefined;
 
   // Determine if dark mode should be applied server-side
-  // If cookie is "dark", apply dark. If "light", don't. If not set, leave it to client.
   const isDark = theme === "dark";
 
   return (
@@ -42,20 +41,38 @@ export default async function RootLayout({
       style={isDark ? { colorScheme: "dark" } : undefined}
     >
       <head>
-        {/* Fallback for first-time visitors (no cookie yet) - check localStorage */}
+        {/*
+          Critical: This script runs before React hydration.
+          1. If no cookie but localStorage has theme → apply it AND set cookie for next SSR
+          2. If no cookie and no localStorage → check system preference
+        */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 var d = document.documentElement;
-                if (d.classList.contains('dark')) return; // Already set by server
+                var hasCookie = document.cookie.indexOf('theme=') !== -1;
+
+                // If server already set dark class via cookie, we're done
+                if (d.classList.contains('dark') && hasCookie) return;
+
                 try {
-                  var theme = localStorage.getItem('theme');
+                  var stored = localStorage.getItem('theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = theme === 'dark' || (theme !== 'light' && prefersDark);
+                  var isDark = stored === 'dark' || (stored !== 'light' && prefersDark);
+
+                  // Apply theme
                   if (isDark) {
                     d.classList.add('dark');
                     d.style.colorScheme = 'dark';
+                  } else {
+                    d.classList.remove('dark');
+                    d.style.colorScheme = 'light';
+                  }
+
+                  // Sync to cookie if not already set (for next SSR)
+                  if (!hasCookie && stored) {
+                    document.cookie = 'theme=' + stored + ';path=/;max-age=31536000;SameSite=Lax';
                   }
                 } catch (e) {}
               })();
@@ -64,7 +81,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme={theme || "system"}>
           {children}
           <SonnerProvider />
         </ThemeProvider>
