@@ -4,11 +4,12 @@
  * Theme Toggle
  *
  * Button to toggle between light and dark themes with smooth transitions.
+ * Uses mounted state to prevent hydration mismatch.
  */
 
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ThemeToggleProps {
@@ -20,10 +21,16 @@ export function ThemeToggle({
   variant = "ghost",
   size = "icon",
 }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+
+  // Wait for client-side mount before rendering theme-dependent UI
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleThemeChange = useCallback(() => {
-    const newTheme = theme === "dark" ? "light" : "dark";
+    const newTheme = resolvedTheme === "dark" ? "light" : "dark";
 
     // Add transitioning class to enable smooth color transitions
     document.documentElement.classList.add("transitioning");
@@ -35,7 +42,19 @@ export function ThemeToggle({
     setTimeout(() => {
       document.documentElement.classList.remove("transitioning");
     }, 350);
-  }, [theme, setTheme]);
+  }, [resolvedTheme, setTheme]);
+
+  // Show placeholder during SSR/hydration to prevent mismatch
+  if (!mounted) {
+    return (
+      <Button variant={variant} size={size} className="relative">
+        <span className="h-5 w-5" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
 
   return (
     <Button
@@ -44,8 +63,11 @@ export function ThemeToggle({
       onClick={handleThemeChange}
       className="relative"
     >
-      <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+      {isDark ? (
+        <Sun className="h-5 w-5" />
+      ) : (
+        <Moon className="h-5 w-5" />
+      )}
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

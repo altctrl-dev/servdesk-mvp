@@ -5,8 +5,10 @@
  *
  * Combines Sidebar, Navbar, and main content area with panel system support.
  * Provides the complete dashboard layout structure.
+ * Includes hydration-safe fade-in to prevent theme flash.
  */
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { Sidebar, type SidebarConfig } from "./sidebar";
@@ -27,9 +29,18 @@ export function LayoutWrapper({
   className,
 }: LayoutWrapperProps) {
   const { sidebarCollapsed } = useUIStore();
+  const [mounted, setMounted] = useState(false);
+
+  // Fade in after hydration to prevent theme flash
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      data-layout-wrapper
+      className={cn("relative min-h-screen", mounted && "hydrated")}
+    >
       {/* Sidebar */}
       <Sidebar config={sidebarConfig} />
 

@@ -171,6 +171,16 @@
     @apply bg-background text-foreground;
   }
 
+  /* Layout fade-in to prevent flash during hydration */
+  [data-layout-wrapper] {
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+
+  [data-layout-wrapper].hydrated {
+    opacity: 1;
+  }
+
   /* Smooth theme transitions - applies to all elements */
   html.transitioning,
   html.transitioning *,
